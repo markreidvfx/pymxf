@@ -1,0 +1,43 @@
+*.py[cod]
+
+# C extensions
+*.so
+*.o
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib64
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# Other
+tests/sandbox
+*~
+docs/_*
+
+# Mac
+.DS_Store
