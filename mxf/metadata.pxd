@@ -6,6 +6,7 @@ cdef class MetaDataItem(object):
     cdef DataModel model
     cdef MetaDataSet data_set
     cdef ItemDef itemdef
+    cdef update_ptr(self)
     
 cdef class MetaDataSet:
     cdef lib.MXFMetadataSet *ptr

@@ -20,6 +20,9 @@ cdef class MetaDataItem(object):
             self.name, self.type_name,
             id(self),
         )
+    cdef update_ptr(self):
+        if self.ptr == NULL:
+            error_check(lib.mxf_get_item(self.data_set.ptr, &self.itemdef.ptr.key, &self.ptr))
 
     def itemtype(self):
         return self.model.find_itemtype(self.itemdef)
@@ -46,6 +49,7 @@ cdef class MetaDataItem(object):
                 return self.itemdef.get_value(self.data_set)
         def __set__(self, value):
             self.itemdef.set_value(self.data_set, value)
+            self.update_ptr()
     
     property raw_value:
         def __get__(self):
@@ -56,6 +60,7 @@ cdef class MetaDataArrayItem(MetaDataItem):
 
     def append(self, value):
         self.itemdef.append(self.data_set, value)
+        self.update_ptr()
         
 cdef class MetaDataSet(object):
             
