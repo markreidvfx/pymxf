@@ -38,6 +38,7 @@ setup(
     author_email="mindmark@gmail.com",
     
     url="",
+    license="GPLv2",
     
     ext_modules=ext_modules,
 

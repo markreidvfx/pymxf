@@ -1,6 +1,7 @@
 import mxf
 import mxf.storage
 import mxf.datamodel
+import mxf.metadata
 import mxf.util
 import unittest
 import traceback
@@ -35,32 +36,41 @@ class TestFile(unittest.TestCase):
         indexSID = 2
         
         now = str(datetime.now())
-        def set_and_check(item,key, value):
-            item[key].value = value
-            print "%s.%s =" % (item.type_name, key),  item[key].value
+        def set_and_check(item,key, value, check=True):
+            data_item = item[key]
+            if isinstance(data_item, mxf.metadata.MetaDataArrayItem):
+                data_item.append(value)
+                print "%s.%s =" % (item.type_name, key),  data_item.value
+                if check:
+                    assert value in data_item.value
+            else:
+                data_item.value = value
+                print "%s.%s =" % (item.type_name, key),  data_item.value
+                if check:
+                    assert value == data_item.value
+            
         
         # Preface
         DVBased_50_625_50_ClipWrapped =  mxf.util.find_essence_container_label("DVBased_50_625_50_ClipWrapped")
         preface = header.create_set("Preface")
-        set_and_check(preface, 'LastModifiedDate', now )
+        set_and_check(preface, 'LastModifiedDate', now, False)
         set_and_check(preface, 'Version', 0x0102)
         set_and_check(preface, 'OperationalPattern', mxf.util.find_op_pattern("atom", "NTracks_1SourceClip"))
-        preface['EssenceContainers'].append(DVBased_50_625_50_ClipWrapped)
-        print preface['EssenceContainers'].value
-        
+        set_and_check(preface, 'EssenceContainers', DVBased_50_625_50_ClipWrapped)
+
         # Preface - Identification
         gen =  uuid.uuid4()
         ProductUID = uuid.uuid4()
         ident = header.create_set("Identification")
-        preface['Identifications'].append(ident)
+        set_and_check(preface, 'Identifications', ident)
+        
         set_and_check(ident, 'ThisGenerationUID', gen)
         set_and_check(ident, 'CompanyName',  "This Company")
         set_and_check(ident, 'ProductName', "Some Product")
         set_and_check(ident, 'VersionString', "Alpha version")
         set_and_check(ident, 'ProductUID', ProductUID)
-        set_and_check(ident, 'ModificationDate',now)
-        print ident['ToolkitVersion']
-        set_and_check(ident, 'ToolkitVersion', None)
+        set_and_check(ident, 'ModificationDate',now, False)
+        set_and_check(ident, 'ToolkitVersion', None, False)
         set_and_check(ident, 'Platform', mxf.util.get_platform_string())
         
         # Preface - ContentStorage
@@ -69,19 +79,21 @@ class TestFile(unittest.TestCase):
 
         # Preface - ContentStorage - MaterialPackage
         m_package = header.create_set("MaterialPackage")
-        storage['Packages'].append(m_package)
+        set_and_check(storage, 'Packages', m_package)
+        
         materialPackageUMID = mxf.util.generate_umid()
         sourcePackageUMID = mxf.util.generate_umid()
         set_and_check(m_package, 'PackageUID', materialPackageUMID)
-        set_and_check(m_package, 'PackageCreationDate', now)
-        set_and_check(m_package, 'PackageModifiedDate', now)
+        set_and_check(m_package, 'PackageCreationDate', now, False)
+        set_and_check(m_package, 'PackageModifiedDate', now, False)
         set_and_check(m_package, 'Name', "python writedv50 material")
         
         # Preface - ContentStorage - MaterialPackage - Timeline Track
         sourceTrackID = 1
         sourceTrackNumber = 0x18010201
         m_track = header.create_set("Track")
-        m_package['Tracks'].append(m_track)
+        set_and_check(m_package, "Tracks", m_track)
+        
         set_and_check(m_track, 'TrackID', sourceTrackID)
         set_and_check(m_track, "TrackNumber", sourceTrackNumber)
         set_and_check(m_track, "EditRate" , "25/1")
@@ -99,7 +111,8 @@ class TestFile(unittest.TestCase):
         
         # Preface - ContentStorage - MaterialPackage - Timeline Track - Sequence - SourceClip
         source_clip = header.create_set("SourceClip")
-        seq['StructuralComponents'].append(source_clip)
+        set_and_check(seq, 'StructuralComponents', source_clip)
+        
         set_and_check(source_clip, 'DataDefinition', mxf.util.find_datadef("LegacyPicture"))
         set_and_check(source_clip, 'Duration', duration)
         set_and_check(source_clip, 'StartPosition', 0)
@@ -110,16 +123,18 @@ class TestFile(unittest.TestCase):
         
         # Preface - ContentStorage - SourcePackage 
         source_package = header.create_set("SourcePackage")
-        storage['Packages'].append(source_package)
+        set_and_check(storage, 'Packages', source_package)
+        
         set_and_check(preface, 'PrimaryPackage', source_package)
         set_and_check(source_package, 'PackageUID', sourcePackageUMID)
-        set_and_check(source_package, 'PackageModifiedDate', now)
-        set_and_check(source_package, 'PackageModifiedDate', now)
+        set_and_check(source_package, 'PackageModifiedDate', now, False)
+        set_and_check(source_package, 'PackageModifiedDate', now, False)
         set_and_check(source_package, 'Name', "writedv50 source")
         
         # Preface - ContentStorage - SourcePackage - Timeline Track
         sp_track =  header.create_set("Track")
-        source_package['Tracks'].append(sp_track)
+        set_and_check(source_package, 'Tracks', sp_track)
+        
         set_and_check(sp_track, 'TrackID', sourceTrackID) 
         set_and_check(sp_track, 'TrackNumber',sourceTrackID)
         set_and_check(sp_track, 'EditRate', '25/1')
@@ -135,7 +150,8 @@ class TestFile(unittest.TestCase):
         
         # Preface - ContentStorage - SourcePackage - Timeline Track - Sequence - SourceClip
         sp_sourceclip = header.create_set('SourceClip')
-        sp_seq['StructuralComponents'].append(sp_sourceclip)
+        set_and_check(sp_seq, 'StructuralComponents', sp_sourceclip)
+
         set_and_check(sp_sourceclip, 'DataDefinition', mxf.util.find_datadef("LegacyPicture"))
         set_and_check(sp_sourceclip, 'Duration', 0)
         set_and_check(sp_sourceclip, 'StartPosition', 0)
@@ -192,7 +208,8 @@ class TestFile(unittest.TestCase):
         
         #Preface - ContentStorage - EssenceContainerData
         ess_container = header.create_set("EssenceContainerData")
-        storage['EssenceContainerData'].append(ess_container)
+        set_and_check(storage, 'EssenceContainerData', ess_container)
+        
         set_and_check(ess_container, 'LinkedPackageUID', sourcePackageUMID)
         set_and_check(ess_container, 'IndexSID', indexSID)
         set_and_check(ess_container, 'BodySID', bodySID)
@@ -248,17 +265,16 @@ class TestFile(unittest.TestCase):
         #output = open("new.txt", 'w')
         
         for set_item in header.iter_sets():
-            print set_item.type_name
+            #print set_item.type_name
             
             #output.write("%s\n" % str(set_item.type_name))
             for item in set_item.iter_items():
                 pass
-                print "   ", item.name, item.type_name,  item.key, item.length, item.value
+                #print "   ", item.name, item.type_name,  item.key, item.length, item.value
                 
                 #output.write("   %s %s %s %s %s\n" % (str(item.name), str(item.type_name), str(item.key), str(item.length), str(item.value)))
         #output.close()
         f.close()
-        
         
     def test_open(self):
         

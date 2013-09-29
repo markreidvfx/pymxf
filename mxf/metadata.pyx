@@ -1,7 +1,8 @@
 cimport lib
-from .util cimport error_check, mxfUL_to_UUID
+from .util cimport error_check, mxfUL_to_UUID, mxfUUID_to_UUID
 from .datamodel cimport DataModel, SetDef, ItemDef, ItemType
 
+from uuid import UUID
 
 cdef class MetaDataItem(object):
 
@@ -124,10 +125,30 @@ cdef class MetaDataSet(object):
             item.data_set = self
             item.itemdef = self.model.find_itemdef(item)
             yield resovle_metadata_item(item)
+            
+    def __richcmp__(x, y, int op):
+        x_instanceID = None
+        y_instanceID = None
+        if isinstance(x, MetaDataSet):
+            x_instanceID = x.instanceID
+        else:
+            x_instanceID =x
+        if isinstance(y, MetaDataSet):
+            y_instanceID = y.instanceID
+        else:
+            y_instanceID = y
+        if op == 2:
+            return x_instanceID == y_instanceID
+        elif op == 3:
+            return x_instanceID != y_instanceID
+            
 
     property type_name:
         def __get__(self):
             return self.setdef().name
+    property instanceID:
+        def __get__(self):
+            return mxfUUID_to_UUID(self.ptr.instanceUID)
         
 cdef object resovle_metadata_item(MetaDataItem item):
     cdef ItemType item_type = item.itemtype()

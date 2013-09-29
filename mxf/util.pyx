@@ -37,8 +37,8 @@ cdef bytes uft16_to_bytes(lib.mxfUTF16Char *wstr, lib.uint16_t size):
     if str == NULL:
         raise MemoryError()
     try:
-        lib.mxf_utf16_to_utf8(str, wstr, size+1)
-        return str[:size]
+        lib.mxf_utf16_to_utf8(str, wstr, size)
+        return str[:size-1] # zero Terminated?
     finally:
         if str !=NULL:
             free(str)
@@ -206,6 +206,14 @@ cdef class MXFUMID(object):
     
     def __str__(self):
         return self.to_string()
+    
+    def __richcmp__(x, y, int op):
+        
+        if op == 2:
+            return str(x) == str(y)
+        
+        elif op == 3:
+            return str(x) != str(y)
        
         
 
