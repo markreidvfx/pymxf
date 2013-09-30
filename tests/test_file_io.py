@@ -21,6 +21,19 @@ files =  os.path.join(cur_dir,'files')
 if not os.path.exists(sandbox):
     os.makedirs(sandbox)
 
+def dump(path):
+    f = mxf.open(path, 'r')
+    header = f.read_header()
+    for set_item in header.iter_sets():
+        print set_item.type_name
+        for item in set_item.iter_items():
+            value = None
+            try:
+                value = item.value
+            except:
+                value = item.raw_value
+                print traceback.format_exc()
+            print '  ', item.name, item.type_name,  item.key, item.length, value
 
 class TestFile(unittest.TestCase):
      
@@ -317,10 +330,49 @@ class TestFile(unittest.TestCase):
         print f.tell()
         
         header_part = f.read_header_partition()
-        #print header_part.essence_containers()
+        print header_part.essence_containers()
         
-        for p in f.read_partitions(header_part):
-            print p, p.closed, p.complete, p.operational_pattern, p.format
+        f.read_partitions()
+        
+        header = f.read_header()
+        
+        for item in header.iter_sets():
+            print item
+        
+        for p in f.partitions:
+            print p, p.indexSID, p.bodySID, p.major_version, p.minor_version
+            
+    def test_mxffile_new(self):
+        test_file = os.path.join(sandbox, 'test_new_lowlevel.mxf')
+        f = mxf.storage.MXFFile()
+        
+        f.open(test_file, 'w')
+        
+        header_part = f.create_partition("Header")
+        body = f.create_partition("Body")
+        footer = f.create_partition("Footer")
+        print header_part, body, footer
+        
+        
+        header_part.append_essence_container(mxf.util.find_essence_container_label("DVBased_50_625_50_ClipWrapped"))
+        
+        model = mxf.datamodel.DataModel()
+        header = mxf.metadata.HeaderMetadata(model)
+        dictionary = header.create_avid_metadictionary()
+        preface = header.create_set("Preface")
+        
+        f.write_partition(header_part)
+        f.write_header(header_part, header)
+        
+        f.write_partition(body)
+        f.write_partition(footer)
+        
+        f.update_partitions()
+        f.close()
+        
+        
+        dump(test_file)
+        
 
 if __name__ == '__main__':
     unittest.main()
