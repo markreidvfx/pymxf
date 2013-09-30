@@ -223,10 +223,15 @@ cdef class MXFUMID(object):
        
         
 
-def iter_labels_and_keys():
+def iter_labels_and_keys(bytes kind):
     cdef lib.MXFList *label_list
     
-    error_check(lib.load_label_table_essence_containers(&label_list))
+    if kind == 'essence_containers':
+        error_check(lib.load_label_table_essence_containers(&label_list))
+    elif kind == 'coding_labels':
+        error_check(lib.load_label_table_coding_labels(&label_list))
+    else:
+        raise ValueError("Invalid kind: %s" % kind)
     
     cdef lib.LabelTableItem *label_item
     

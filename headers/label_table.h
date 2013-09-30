@@ -17,6 +17,7 @@ typedef struct
 }LabelTableItem;
     
 int load_label_table_essence_containers(MXFList** label_list);
+int load_label_table_coding_labels(MXFList** label_list);
     
 
 #ifdef __cplusplus

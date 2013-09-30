@@ -200,6 +200,96 @@ fail:
     
 }
 
+#define ADD_ITEM_CMDEF(name) \
+CHK_OFAIL(register_label_table_item(newlist, #name, &MXF_CMDEF_L(name)));
+
+
+int load_label_table_coding_labels(MXFList** label_list)
+{
+    MXFList* newlist;
+    
+    mxf_create_list(&newlist, free_label_table_item_in_list);
+    
+    //IEC-DV and DV-based mappings
+    ADD_ITEM_CMDEF(IECDV_25_525_60);
+    ADD_ITEM_CMDEF(IECDV_25_625_50);
+    ADD_ITEM_CMDEF(DVBased_25_525_60);
+    ADD_ITEM_CMDEF(DVBased_25_625_50);
+    ADD_ITEM_CMDEF(DVBased_50_525_60);
+    ADD_ITEM_CMDEF(DVBased_50_625_50);
+    ADD_ITEM_CMDEF(DVBased_100_1080_60_I);
+    ADD_ITEM_CMDEF(DVBased_100_1080_50_I);
+    ADD_ITEM_CMDEF(DVBased_100_720_60_P);
+    ADD_ITEM_CMDEF(DVBased_100_720_50_P);
+    
+    /* D-10 mappings */
+    ADD_ITEM_CMDEF(D10_50_625_50);
+    ADD_ITEM_CMDEF(D10_50_525_60);
+    ADD_ITEM_CMDEF(D10_40_625_50);
+    ADD_ITEM_CMDEF(D10_40_525_60);
+    ADD_ITEM_CMDEF(D10_30_625_50);
+    ADD_ITEM_CMDEF(D10_30_525_60);
+    
+    /* A-law audio mapping */
+    ADD_ITEM_CMDEF(ALaw);
+    
+    /* MPEG mappings */
+    ADD_ITEM_CMDEF(MP4AdvancedRealTimeSimpleL1);
+    ADD_ITEM_CMDEF(MP4AdvancedRealTimeSimpleL2);
+    ADD_ITEM_CMDEF(MP4AdvancedRealTimeSimpleL3);
+    ADD_ITEM_CMDEF(MP4AdvancedRealTimeSimpleL4);
+    
+    /* AVC Intra-Frame Coding */
+    ADD_ITEM_CMDEF(AVCI_50_1080_60_I);
+    ADD_ITEM_CMDEF(AVCI_50_1080_50_I);
+    ADD_ITEM_CMDEF(AVCI_50_1080_30_P);
+    ADD_ITEM_CMDEF(AVCI_50_1080_25_P);
+    ADD_ITEM_CMDEF(AVCI_50_720_60_P);
+    ADD_ITEM_CMDEF(AVCI_50_720_50_P);
+    ADD_ITEM_CMDEF(AVCI_100_1080_60_I);
+    ADD_ITEM_CMDEF(AVCI_100_1080_50_I);
+    ADD_ITEM_CMDEF(AVCI_100_1080_30_P);
+    ADD_ITEM_CMDEF(AVCI_100_1080_25_P);
+    ADD_ITEM_CMDEF(AVCI_100_720_60_P);
+    ADD_ITEM_CMDEF(AVCI_100_720_50_P);
+    
+    /* MPEG-2 Long GOP */
+    ADD_ITEM_CMDEF(MPEG2_MP_HL_LONGGOP);
+    ADD_ITEM_CMDEF(MPEG2_422P_HL_LONGGOP);
+    ADD_ITEM_CMDEF(MPEG2_MP_H14_LONGGOP);
+    
+    /* DNxHD / VC-3 */
+    
+    ADD_ITEM_CMDEF(DNxHD);
+    ADD_ITEM_CMDEF(VC3_1080P_1235);
+    ADD_ITEM_CMDEF(VC3_1080P_1237);
+    ADD_ITEM_CMDEF(VC3_1080P_1238);
+    ADD_ITEM_CMDEF(VC3_1080I_1241);
+    ADD_ITEM_CMDEF(VC3_1080I_1242);
+    ADD_ITEM_CMDEF(VC3_1080I_1243);
+    ADD_ITEM_CMDEF(VC3_720P_1250);
+    ADD_ITEM_CMDEF(VC3_720P_1251);
+    ADD_ITEM_CMDEF(VC3_720P_1252);
+    ADD_ITEM_CMDEF(VC3_1080P_1253);
+    
+    /* Uncompressed */
+    ADD_ITEM_CMDEF(UNC_8B_422_INTERLEAVED);
+    ADD_ITEM_CMDEF(UNC_10B_422_INTERLEAVED);
+
+    *label_list = newlist;
+    return 1;
+    
+fail:
+    
+    mxf_clear_list(&newlist);
+    return 0;
+    
+}
+    
+    
+    
+    
+
 int register_label_table_item(MXFList* label_list, char* name, mxfKey* label)
 {
     
