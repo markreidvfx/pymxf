@@ -294,6 +294,13 @@ cdef class MXFFile(object):
     def write_partition(self, Partition partition):
         error_check(lib.mxf_write_partition(self.ptr, partition.ptr))
         error_check(lib.mxf_fill_to_kag(self.ptr, partition.ptr))
+        
+    def write_header(self, Partition partition, HeaderMetadata header):
+        
+        error_check(lib.mxf_mark_header_start(self.ptr, partition.ptr))
+        error_check(lib.mxf_write_header_metadata(self.ptr, header.ptr))
+        error_check(lib.mxf_fill_to_kag(self.ptr, partition.ptr))
+        error_check(lib.mxf_mark_header_end(self.ptr, partition.ptr))
     
     def write_rip(self):
         cdef PartitionList part_list = PartitionList(self.partitions)

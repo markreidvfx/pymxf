@@ -38,7 +38,15 @@ cdef extern from "mxf/mxf.h":
     cdef int mxf_find_singular_set_by_key(MXFHeaderMetadata* headerMetadata, mxfKey* key, MXFMetadataSet** set)
     cdef int mxf_get_item(MXFMetadataSet* set, mxfKey* key, MXFMetadataItem** resultItem)
     cdef int mxf_have_item(MXFMetadataSet* set, mxfKey* key)
-        
+    
+    cdef int mxf_write_header_metadata(MXFFile* mxfFile, MXFHeaderMetadata* headerMetadata)
+    cdef int mxf_write_header_primer_pack(MXFFile* mxfFile, MXFHeaderMetadata* headerMetadata)
+    cdef int mxf_write_header_sets(MXFFile* mxfFile, MXFHeaderMetadata* headerMetadata)
+    cdef int mxf_write_set(MXFFile* mxfFile, MXFMetadataSet* set)
+    cdef int mxf_write_item(MXFFile* mxfFile, MXFMetadataItem* item)
+    cdef void mxf_get_header_metadata_size(MXFFile* mxfFile, MXFHeaderMetadata* headerMetadata, uint64_t* size)
+    cdef uint64_t mxf_get_set_size(MXFFile* mxfFile, MXFMetadataSet* set)
+       
     cdef void mxf_get_uint8(uint8_t* value, uint8_t* result)
     cdef void mxf_get_uint16(uint8_t* value, uint16_t* result)
     cdef void mxf_get_uint32(uint8_t* value, uint32_t* result)
