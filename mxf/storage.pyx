@@ -183,6 +183,15 @@ cdef class MXFFile(object):
         error_check(lib.mxf_read_kl(self.ptr, &key, &llen, &length))
         
         return mxfUL_to_UUID(key), llen, length
+    
+    def read_next_nonfiller_kl(self):
+        cdef lib.mxfKey key
+        cdef lib.uint8_t llen
+        cdef lib.uint64_t length
+        
+        error_check(lib.mxf_read_next_nonfiller_kl(self.ptr, &key, &llen, &length))
+        
+        return mxfUL_to_UUID(key), llen, length
         
     def read_header_partition(self):
         cdef lib.mxfKey key
@@ -195,6 +204,29 @@ cdef class MXFFile(object):
         part = self.read_partition(mxfUL_to_UUID(key))
         #self.partitions.append(part)
         return part
+    
+    def read_header(self, Partition header_partition=None):
+        if not header_partition:
+            self.seek(0)
+            header_partition = self.read_header_partition()
+        
+        
+        
+        cdef lib.mxfKey key
+        cdef lib.uint8_t llen
+        cdef lib.uint64_t length
+        
+        uuid_key, llen, length = self.read_next_nonfiller_kl()
+        UUID_to_mxfUL(uuid_key, &key)
+
+        if not lib.mxf_is_header_metadata(&key):
+            raise IOError("cannot find header")
+        
+        cdef HeaderMetadata header = HeaderMetadata()
+        error_check(lib.mxf_avid_read_filtered_header_metadata(self.ptr, 0, header.ptr, header_partition.ptr.headerByteCount,
+                                                               &key, llen, length))
+        
+        return header
         
     def read_partition(self, key):
         cdef lib.mxfKey ul

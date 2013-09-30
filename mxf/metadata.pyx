@@ -177,8 +177,12 @@ cdef object resovle_metadata_item(MetaDataItem item):
 
 cdef class HeaderMetadata(object):
     
-    def __init__(self, DataModel model):
+    def __init__(self, DataModel model=None):
         self.ptr = NULL
+        
+        if not model:
+            model = DataModel()
+        
         error_check(lib.mxf_create_header_metadata(&self.ptr, model.ptr))
         self.model = model
         
