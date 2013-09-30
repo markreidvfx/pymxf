@@ -18,18 +18,6 @@ cdef class Partition(object):
     def __dealloc__(self):
         if self.ptr:
             lib.mxf_free_partition(&self.ptr)
-            
-    def is_op_1a(self):
-        
-        if lib.is_op_1a(&self.ptr.operationalPattern):
-            return True
-        return False
-            
-    def is_op_atom(self):
-        
-        if lib.is_op_atom(&self.ptr.operationalPattern):
-            return True
-        return False
     
     def essence_containers(self):
         
@@ -44,9 +32,10 @@ cdef class Partition(object):
         return items
     
     def __repr__(self):
-        return '<%s.%s of %s at 0x%x>' % (
+        return '<%s.%s of %s %s at 0x%x>' % (
             self.__class__.__module__,
             self.__class__.__name__,
+            self.format,
             self.type_name,
             id(self),
         )
@@ -77,12 +66,51 @@ cdef class Partition(object):
     
     property format:
         def __get__(self):
-            format, name = find_op_pattern_name(mxfUL_to_UUID(self.ptr.operationalPattern))
-            return format
+            if lib.is_op_atom(&self.ptr.operationalPattern):
+                return 'atom'
+            elif lib.is_op_1a(&self.ptr.operationalPattern):
+                return '1a'
+            elif lib.is_op_1b(&self.ptr.operationalPattern):
+                return '1b'
+            else:
+                return "Unknown"
         
     property key:
         def __get__(self):
             return mxfUL_to_UUID(self.ptr.key)
+        def __set__(self, value):
+            cdef lib.mxfUL key
+            UUID_to_mxfUL(value, &key)
+            self.ptr.key = key
+    
+    property kag_size:
+        def __get__(self):
+            return self.ptr.kagSize
+        def __set__(self, lib.uint32_t value):
+            self.ptr.kagSize = value
+    
+    property major_version:
+        def __get__(self):
+            return self.ptr.majorVersion
+        def __set__(self, lib.uint16_t value):
+            self.ptr.majorVersion = value
+            
+    property minor_version:
+        def __get__(self):
+            return self.ptr.minorVersion
+        def __set__(self, lib.uint16_t value):
+            self.ptr.minorVersion = value
+    
+    property indexSID:
+        def __get__(self):
+            return self.ptr.indexSID
+        def __set__(self, lib.uint32_t value):
+            self.ptr.indexSID = value
+    property bodySID:
+        def __get__(self):
+            return self.ptr.bodySID
+        def __set__(self, lib.uint32_t value):
+            self.ptr.bodySID = value
         
     property position:
         def __get__(self):
@@ -133,7 +161,12 @@ cdef class MXFFile(object):
         else:
             raise ValueError("invalid seek mode:%s" % mode)
         
-        lib.mxf_file_seek(self.ptr, position, whence)
+        error_check(lib.mxf_file_seek(self.ptr, position, whence))
+    
+    def tell(self):
+        return lib.mxf_file_tell(self.ptr)
+    def skip(self, lib.uint64_t length):
+        error_check(lib.mxf_skip(self.ptr, length))
         
     def read_kl(self):
         cdef lib.mxfKey key
@@ -216,13 +249,29 @@ cdef class MXFFile(object):
             self.partitions.reverse()
                 
         return self.partitions
-            
-            
-            #lib.mxf_initialise_list_iter(&)
     
-    def tell(self):
-        return lib.mxf_file_tell(self.ptr)
+    def create_partition(self):
+        
+        cdef Partition last_part = None
+        
+        if self.partitions:
+            last_part = self.partitions[-1]
+        
+        cdef Partition part = Partition()
+        if last_part:
+            error_check(lib.mxf_initialise_with_partition(last_part.ptr, part.ptr))
+        
+        self.partitions.append(part)
+        return part
     
+    def write_rip(self):
+        cdef PartitionList part_list = PartitionList(self.partitions)
+        error_check(lib.mxf_write_rip(self.ptr, &part_list.ptr))
+        
+    def update_partitions(self):
+        cdef PartitionList part_list = PartitionList(self.partitions)
+        error_check(lib.mxf_update_partitions(self.ptr, &part_list.ptr))
+        
     def close(self):
         lib.mxf_file_close(&self.ptr)
         

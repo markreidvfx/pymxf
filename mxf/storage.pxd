@@ -12,7 +12,7 @@ cdef class PartitionList(object):
     
 cdef class MXFFile(object):
     cdef lib.MXFFile *ptr
-    cdef list partitions
+    cdef readonly list partitions
     
 cdef class File(object):
     cdef lib.MXFFile *c_file
