@@ -123,6 +123,13 @@ def find_op_pattern(bytes name, bytes pattern):
     
     return OPERATION_PATTERNS[name][pattern]
 
+def find_op_pattern_name(item_uuid):
+    for format, value in OPERATION_PATTERNS.items():
+        for name, type_uuid in value.items():
+            if item_uuid == type_uuid:
+                return format, name
+    raise ValueError("Uknown operation pattern: %s" % (str(item_uuid)))
+
 DATA_DEFS = {
 'Picture':mxfUL_to_UUID(lib.DDEF_Picture),
 'Sound':mxfUL_to_UUID(lib.DDEF_Sound),

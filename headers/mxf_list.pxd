@@ -20,7 +20,7 @@ cdef extern from "mxf/mxf.h":
         
     cdef int mxf_create_list(MXFList** list, free_func_type freeFunc)
     cdef void mxf_free_list(MXFList** list)
-    cdef void mxf_initialise_list(MXFList* list, free_func_type freeFunc)
+    cdef void mxf_initialise_list(MXFList* list, void *)
     cdef void mxf_clear_list(MXFList* list)
     
     cdef int mxf_append_list_element(MXFList* list, void* data)

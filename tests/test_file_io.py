@@ -301,8 +301,26 @@ class TestFile(unittest.TestCase):
                #output.write("   %s %s %s %s %s\n" % (str(item.name), str(item.type_name), str(item.key), str(item.length), str(value)))
 
                print '  ', item.name, item.type_name,  item.key, item.length, value
-    
-       
+
+    def test_mxffile(self):
+        test_file = os.path.join(files,'test_title.mxf')
+        
+        f = mxf.storage.MXFFile()
+        
+        f.open(test_file, 'r')
+        
+        print f.size
+        print f.min_llen
+        print f.seekable
+        print f.eof
+        
+        print f.tell()
+        
+        header_part = f.read_header_partition()
+        #print header_part.essence_containers()
+        
+        for p in f.read_partitions(header_part):
+            print p, p.closed, p.complete, p.operational_pattern, p.format
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,13 +1,13 @@
 
 cimport lib
 cimport stdio
-from .util cimport error_check, uft16_to_bytes, MXFUL, MXFKEY, UUID_to_mxfUL,UUID_to_mxfUUID, mxfUUID_to_UUID
+from .util cimport error_check, uft16_to_bytes, UUID_to_mxfUL, mxfUL_to_UUID, UUID_to_mxfUUID, mxfUUID_to_UUID
 from .datamodel cimport DataModel, SetDef
 from .metadata cimport HeaderMetadata 
 
 import datetime
 
-from .util import find_essence_element_key
+from .util import find_essence_element_key,find_op_pattern_name
 
 
 
@@ -37,13 +37,218 @@ cdef class Partition(object):
         items = []
         lib.mxf_initialise_list_iter(&list_iter, &self.ptr.essenceContainers)
 
-        cdef MXFUL ul
-        
+        cdef lib.mxfKey ul
         while lib.mxf_next_list_iter_element(&list_iter):
-            ul = MXFUL()
-            lib.mxf_get_ul(<lib.uint8_t*> lib.mxf_get_iter_element(&list_iter), &ul.label)
-            items.append(ul)
+            lib.mxf_get_ul(<lib.uint8_t*> lib.mxf_get_iter_element(&list_iter), &ul)
+            items.append(mxfUL_to_UUID(ul))
         return items
+    
+    def __repr__(self):
+        return '<%s.%s of %s at 0x%x>' % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.type_name,
+            id(self),
+        )
+    
+    property type_name:
+        def __get__(self):
+            if lib.mxf_is_header_partition_pack(&self.ptr.key):
+                return "Header"
+            elif lib.mxf_is_body_partition_pack(&self.ptr.key):
+                return "Body"
+            elif lib.mxf_is_footer_partition_pack(&self.ptr.key):
+                return "Footer"
+            elif lib.mxf_is_partition_pack(&self.ptr.key):
+                return "Pack"
+            else:
+                return "Unknown"
+    property closed:
+        def __get__(self):
+            return lib.mxf_partition_is_closed(&self.ptr.key) == 1
+    property complete:
+        def __get__(self):
+            return lib.mxf_partition_is_complete(&self.ptr.key) == 1
+        
+    property operational_pattern:
+        def __get__(self):
+            format, name = find_op_pattern_name(mxfUL_to_UUID(self.ptr.operationalPattern))
+            return name
+    
+    property format:
+        def __get__(self):
+            format, name = find_op_pattern_name(mxfUL_to_UUID(self.ptr.operationalPattern))
+            return format
+        
+    property key:
+        def __get__(self):
+            return mxfUL_to_UUID(self.ptr.key)
+        
+    property position:
+        def __get__(self):
+            return self.ptr.thisPartition
+        
+    property footer_position:
+        def __get__(self):
+            return self.ptr.footerPartition
+    
+    property previous_position:
+        def __get__(self):
+            return self.ptr.previousPartition
+            
+cdef class PartitionList(object):
+    
+    def __init__(self, partitions=None):
+        lib.mxf_initialise_list(&self.ptr, NULL)
+        if partitions:
+            for item in partitions:
+                self.append(item)
+                
+    def append(self, Partition partition):
+        error_check(lib.mxf_append_partition(&self.ptr, partition.ptr))
+        
+    def __dealloc__(self):
+        lib.mxf_clear_list(&self.ptr)
+
+    
+cdef class MXFFile(object):
+    def __init__(self):
+        self.partitions = []
+        
+    def open(self, bytes path, bytes mode=None):
+        if mode == 'r':
+            error_check(lib.mxf_disk_file_open_read(path, &self.ptr))
+        elif mode  == 'w':
+            error_check(lib.mxf_disk_file_open_new(path, &self.ptr))
+            
+        elif mode == 'rw':
+            error_check(lib.mxf_disk_file_open_modify(path, &self.ptr))
+        else:
+            raise ValueError("invalid mode: %s" % mode)
+        
+    def seek(self, lib.int64_t position, bytes mode=b"SEEK_SET"):
+        cdef int whence
+        if mode.lower() == "seek_set":
+            whence = lib.SEEK_SET
+        else:
+            raise ValueError("invalid seek mode:%s" % mode)
+        
+        lib.mxf_file_seek(self.ptr, position, whence)
+        
+    def read_kl(self):
+        cdef lib.mxfKey key
+        cdef lib.uint8_t llen
+        cdef lib.uint64_t length 
+        
+        error_check(lib.mxf_read_kl(self.ptr, &key, &llen, &length))
+        
+        return mxfUL_to_UUID(key), llen, length
+        
+    def read_header_partition(self):
+        cdef lib.mxfKey key
+        cdef lib.uint8_t llen
+        cdef lib.uint64_t length
+        
+        if not lib.mxf_read_header_pp_kl(self.ptr, &key, &llen, &length):
+            raise IOError("Unable to read header")
+        
+        part = self.read_partition(mxfUL_to_UUID(key))
+        #self.partitions.append(part)
+        return part
+        
+    def read_partition(self, key):
+        cdef lib.mxfKey ul
+        UUID_to_mxfUL(key, &ul)
+        cdef Partition part = Partition()
+        
+        error_check(lib.mxf_read_partition(self.ptr, &ul, &part.ptr))
+        return part
+    
+    def read_partitions(self, Partition header_partition=None):
+        
+        if not header_partition:
+            self.seek(0)
+            header_partition = self.read_header_partition()
+            
+        cdef lib.mxfKey mxf_key
+        cdef lib.uint8_t llen
+        cdef lib.uint64_t length
+        
+        cdef lib.uint64_t this_partition
+        
+        cdef lib.MXFRIP rip
+        cdef lib.MXFRIPEntry *rip_entry
+        cdef lib.MXFListIterator list_iter
+        
+        cdef Partition part 
+        
+        # use the RIP if there is one
+        if lib.mxf_read_rip(self.ptr, &rip):
+            try:
+                lib.mxf_initialise_list_iter(&list_iter, &rip.entries)
+                while lib.mxf_next_list_iter_element(&list_iter):
+                    rip_entry = <lib.MXFRIPEntry*> lib.mxf_get_iter_element(&list_iter)
+                    self.seek(self.runin_len + rip_entry.thisPartition, "SEEK_SET")
+                    
+                    key, llen, length = self.read_kl()
+                    part = self.read_partition(key)
+                    self.partitions.append(part)
+            finally:
+                lib.mxf_clear_rip(&rip)
+        else:
+            # start from footer partition and work back to the header partition
+            pos = header_partition.footer_position
+            if pos <= header_partition.position:
+                return
+            
+            
+            while True:
+                self.seek(self.runin_len + pos, "SEEK_SET")
+                key, llen, length = self.read_kl()
+                part = self.read_partition(key)
+                self.partitions.append(part)
+                
+                print part.footer_position, part.position   
+                pos = part.previous_position
+                
+                if not pos <  part.position: 
+                    break
+            self.partitions.reverse()
+                
+        return self.partitions
+            
+            
+            #lib.mxf_initialise_list_iter(&)
+    
+    def tell(self):
+        return lib.mxf_file_tell(self.ptr)
+    
+    def close(self):
+        lib.mxf_file_close(&self.ptr)
+        
+    property size:
+        def __get__(self):
+            return lib.mxf_file_size(self.ptr)
+        
+    property min_llen:
+        def __get__(self):
+            return lib.mxf_get_min_llen(self.ptr)
+        def __set__(self, lib.uint8_t value):
+            lib.mxf_file_set_min_llen(self.ptr, value)
+            
+    property runin_len:
+        def __get__(self):
+            return lib.mxf_get_runin_len(self.ptr)
+        def __set__(self, lib.uint16_t value):
+            lib.mxf_set_runin_len(self.ptr, value)
+
+    property seekable:
+        def __get__(self):
+            return lib.mxf_file_is_seekable(self.ptr) == 1
+            
+    property eof:
+        def __get__(self):
+            return lib.mxf_file_eof(self.ptr) == 1
 
 cdef class File(object):
 

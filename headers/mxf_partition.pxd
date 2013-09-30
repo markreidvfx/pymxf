@@ -20,9 +20,6 @@ cdef extern from "mxf/mxf.h":
         
         int64_t headerMarkInPos
         int64_t indexMarkInPos
-    
-    ctypedef struct MXFRIPEntry:
-        pass
         
     ctypedef MXFList MXFFilePartitions
     

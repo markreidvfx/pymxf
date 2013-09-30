@@ -7,6 +7,13 @@ from .metadata cimport HeaderMetadata
 cdef class Partition(object):
     cdef lib.MXFPartition *ptr
     
+cdef class PartitionList(object):
+    cdef lib.MXFFilePartitions ptr
+    
+cdef class MXFFile(object):
+    cdef lib.MXFFile *ptr
+    cdef list partitions
+    
 cdef class File(object):
     cdef lib.MXFFile *c_file
     cdef readonly HeaderMetadata header
