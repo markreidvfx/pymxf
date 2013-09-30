@@ -148,6 +148,7 @@ cdef class MXFFile(object):
             error_check(lib.mxf_disk_file_open_read(path, &self.ptr))
         elif mode  == 'w':
             error_check(lib.mxf_disk_file_open_new(path, &self.ptr))
+            self.min_llen = 4
             
         elif mode == 'rw':
             error_check(lib.mxf_disk_file_open_modify(path, &self.ptr))
@@ -250,7 +251,7 @@ cdef class MXFFile(object):
                 
         return self.partitions
     
-    def create_partition(self):
+    def create_partition(self, type_name=None):
         
         cdef Partition last_part = None
         
@@ -258,10 +259,30 @@ cdef class MXFFile(object):
             last_part = self.partitions[-1]
         
         cdef Partition part = Partition()
+        error_check(lib.mxf_create_partition(&part.ptr))
+        
         if last_part:
             error_check(lib.mxf_initialise_with_partition(last_part.ptr, part.ptr))
-        
+
         self.partitions.append(part)
+        
+        if type_name.lower() == "header":
+            part.ptr.key = lib.MXF_PP_K_ClosedComplete_Header
+            part.ptr.majorVersion = 1
+            part.ptr.minorVersion = 2
+            part.ptr.kagSize = 0x100
+            part.ptr.bodySID  = 1
+            part.ptr.indexSID = 2
+            part.ptr.operationalPattern = lib.MXF_OP_L_atom_NTracks_1SourceClip
+        elif type_name.lower() == 'body':
+            part.ptr.key = lib.MXF_PP_K_ClosedComplete_Body
+            part.ptr.kagSize = 0x200
+            part.ptr.bodySID = 1
+        elif type_name.lower() == "footer":
+            part.ptr.key = lib.MXF_PP_K_ClosedComplete_Footer
+            part.ptr.kagSize = 0x200
+            part.ptr.indexSID = 2
+            
         return part
     
     def write_rip(self):

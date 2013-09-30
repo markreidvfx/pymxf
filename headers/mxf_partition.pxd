@@ -45,8 +45,8 @@ cdef extern from "mxf/mxf.h":
     cdef void mxf_clear_file_partitions(MXFFilePartitions* partitions)
     cdef void mxf_clear_rip(MXFRIP* rip)
             
-    cdef mxf_create_partition(MXFPartition** partition)
-    cdef mxf_create_from_partition(const MXFPartition* sourcePartition, MXFPartition** partition)
+    cdef int mxf_create_partition(MXFPartition** partition)
+    cdef int mxf_create_from_partition(const MXFPartition* sourcePartition, MXFPartition** partition)
     cdef void mxf_free_partition(MXFPartition** partition)
     
     cdef void mxf_initialise_partition(MXFPartition* partition)
