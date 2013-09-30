@@ -157,21 +157,20 @@ ESSENCE_ELEMENT_KEYS = {
 def find_essence_element_key(bytes name):
     return ESSENCE_ELEMENT_KEYS[name]
 
-ESSENCE_CODING_LABELS = {
-'DVBased_50_625_50' : mxfUL_to_UUID(lib.CMDEF_DVBased_50_625_50)      
-               }
 def find_essence_coding_label(bytes name):
-    return ESSENCE_CODING_LABELS[name]
+    for key_name, key in iter_labels_and_keys('essence_coding_labels'):
+        if name == key_name:
+            return key
+        
+    raise IndexError("No label named: %s" % name)
 
-
-ESSENCE_CONTAINER_LABELS = {
-'DVBased_50_625_50_ClipWrapped': mxfUL_to_UUID(lib.EC_DVBased_50_625_50_ClipWrapped)
-                            }
 def find_essence_container_label(bytes name):
-    return ESSENCE_CONTAINER_LABELS[name]
-
-
-
+    
+    for key_name, key in iter_labels_and_keys('essence_containers'):
+        if name == key_name:
+            return key
+        
+    raise IndexError("No label named: %s" % name)
     
 
 def generate_umid():
@@ -228,7 +227,7 @@ def iter_labels_and_keys(bytes kind):
     
     if kind == 'essence_containers':
         error_check(lib.load_label_table_essence_containers(&label_list))
-    elif kind == 'coding_labels':
+    elif kind == 'essence_coding_labels':
         error_check(lib.load_label_table_coding_labels(&label_list))
     else:
         raise ValueError("Invalid kind: %s" % kind)
