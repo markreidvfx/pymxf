@@ -1,6 +1,7 @@
 
 #include <mxf/mxf.h>
 #include <mxf/mxf_avid_labels_and_keys.h>
+#include <mxf/mxf_p2_labels_and_keys.h>
 
 #ifdef __cplusplus
 extern "C"

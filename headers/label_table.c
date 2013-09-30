@@ -54,6 +54,118 @@ int load_label_table_essence_containers(MXFList** label_list)
 
     mxf_create_list(&newlist, free_label_table_item_in_list);
     
+    //Multiple wrappings for interleaved essence
+    ADD_ITEM_EC(MultipleWrappings);
+    
+    //AES3/BWF mapping
+    ADD_ITEM_EC(BWFFrameWrapped);
+    ADD_ITEM_EC(AES3FrameWrapped);
+    ADD_ITEM_EC(AES3ClipWrapped);
+    ADD_ITEM_EC(BWFCustomWrapped);
+    ADD_ITEM_EC(AES3CustomWrapped);
+    
+    //IEC-DV and DV-based mappings
+    ADD_ITEM_EC(IECDV_25_525_60_FrameWrapped);
+    ADD_ITEM_EC(IECDV_25_525_60_ClipWrapped);
+    ADD_ITEM_EC(IECDV_25_625_50_FrameWrapped);
+    ADD_ITEM_EC(IECDV_25_625_50_ClipWrapped);
+    ADD_ITEM_EC(DVBased_25_525_60_FrameWrapped);
+    ADD_ITEM_EC(DVBased_25_525_60_ClipWrapped);
+    ADD_ITEM_EC(DVBased_25_625_50_FrameWrapped);
+    ADD_ITEM_EC(DVBased_25_625_50_ClipWrapped);
+    ADD_ITEM_EC(DVBased_50_525_60_FrameWrapped);
+    ADD_ITEM_EC(DVBased_50_525_60_ClipWrapped);
+    ADD_ITEM_EC(DVBased_50_625_50_FrameWrapped);
+    ADD_ITEM_EC(DVBased_50_625_50_ClipWrapped);
+    ADD_ITEM_EC(DVBased_100_1080_60_I_FrameWrapped);
+    ADD_ITEM_EC(DVBased_100_1080_60_I_ClipWrapped);
+    ADD_ITEM_EC(DVBased_100_1080_50_I_FrameWrapped);
+    ADD_ITEM_EC(DVBased_100_1080_50_I_ClipWrapped);
+    ADD_ITEM_EC(DVBased_100_720_60_P_FrameWrapped);
+    ADD_ITEM_EC(DVBased_100_720_60_P_ClipWrapped);
+    ADD_ITEM_EC(DVBased_100_720_50_P_FrameWrapped);
+    ADD_ITEM_EC(DVBased_100_720_50_P_ClipWrapped);
+    
+    //Uncompressed mappings
+
+    //SD
+    ADD_ITEM_EC(SD_Unc_525_5994i_422_135_FrameWrapped);
+    ADD_ITEM_EC(SD_Unc_525_5994i_422_135_ClipWrapped);
+    ADD_ITEM_EC(SD_Unc_625_50i_422_135_FrameWrapped);
+    ADD_ITEM_EC(SD_Unc_625_50i_422_135_ClipWrapped);
+    
+    //HD 1080
+    ADD_ITEM_EC(HD_Unc_1080_25p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_25p_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_50i_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_50i_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_2997p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_2997p_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_5994i_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_5994i_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_30p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_30p_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_60i_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_60i_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_50p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_50p_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_5994p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_5994p_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_60p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_1080_60p_422_ClipWrapped);
+    
+    /* HD 720 */
+    ADD_ITEM_EC(HD_Unc_720_25p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_720_25p_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_720_2997p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_720_2997p_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_720_30p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_720_30p_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_720_50p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_720_50p_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_720_5994p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_720_5994p_422_ClipWrapped);
+    ADD_ITEM_EC(HD_Unc_720_60p_422_FrameWrapped);
+    ADD_ITEM_EC(HD_Unc_720_60p_422_ClipWrapped);
+    
+    /* D-10 mapping */
+    ADD_ITEM_EC(D10_50_625_50_defined_template);
+    ADD_ITEM_EC(D10_50_625_50_extended_template);
+    ADD_ITEM_EC(D10_50_625_50_picture_only);
+    ADD_ITEM_EC(D10_50_525_60_defined_template);
+    ADD_ITEM_EC(D10_50_525_60_extended_template);
+    ADD_ITEM_EC(D10_50_525_60_picture_only);
+    ADD_ITEM_EC(D10_40_625_50_defined_template);
+    ADD_ITEM_EC(D10_40_625_50_extended_template);
+    ADD_ITEM_EC(D10_40_625_50_picture_only);
+    ADD_ITEM_EC(D10_40_525_60_defined_template);
+    ADD_ITEM_EC(D10_40_525_60_extended_template);
+    ADD_ITEM_EC(D10_40_525_60_picture_only);
+    ADD_ITEM_EC(D10_30_625_50_defined_template);
+    ADD_ITEM_EC(D10_30_625_50_extended_template);
+    ADD_ITEM_EC(D10_30_625_50_picture_only);
+    ADD_ITEM_EC(D10_30_525_60_defined_template);
+    ADD_ITEM_EC(D10_30_525_60_extended_template);
+    ADD_ITEM_EC(D10_30_525_60_picture_only);
+    
+    /* A-law mapping */
+    ADD_ITEM_EC(ALawFrameWrapped);
+    ADD_ITEM_EC(ALawClipWrapped);
+    ADD_ITEM_EC(ALawCustomWrapped);
+    
+    /* AVC Intra-Frame Coding */
+    ADD_ITEM_EC(AVCIFrameWrapped);
+    ADD_ITEM_EC(AVCIClipWrapped);
+    
+    /* MPEG ES VideoStream-0 SID */
+    ADD_ITEM_EC(MPEGES0FrameWrapped);
+    ADD_ITEM_EC(MPEGES0ClipWrapped);
+    
+    /* VC-3 */
+    ADD_ITEM_EC(VC3FrameWrapped);
+    ADD_ITEM_EC(VC3ClipWrapped);
+    
+    // Avid Labels
     ADD_ITEM_EC(AvidDV25ClipWrappedEssenceContainer);
     ADD_ITEM_EC(AvidMJPEGClipWrapped);
     ADD_ITEM_EC(AvidIMX50_625_50);
@@ -73,6 +185,10 @@ int load_label_table_essence_containers(MXFList** label_list)
     ADD_ITEM_EC(DNxHD1080i185XClipWrapped);
     ADD_ITEM_EC(DNxHD1080i120ClipWrapped);
     ADD_ITEM_EC(DNxHD1080i185ClipWrapped);
+    
+    /* P2 AVC Intra-Frame Coding - version byte is incorrectly set to 0x01 */
+    ADD_ITEM_EC(P2AVCIFrameWrapped);
+    ADD_ITEM_EC(P2AVCIClipWrapped);
     
     *label_list = newlist;
     return 1;
