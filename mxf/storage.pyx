@@ -31,6 +31,12 @@ cdef class Partition(object):
             items.append(mxfUL_to_UUID(ul))
         return items
     
+    def append_essence_container(self, container_uuid):
+        cdef lib.mxfKey ul
+        UUID_to_mxfUL(container_uuid, &ul)
+        error_check(lib.mxf_append_partition_esscont_label(self.ptr, &ul))
+
+    
     def __repr__(self):
         return '<%s.%s of %s %s at 0x%x>' % (
             self.__class__.__module__,
@@ -284,6 +290,10 @@ cdef class MXFFile(object):
             part.ptr.indexSID = 2
             
         return part
+    
+    def write_partition(self, Partition partition):
+        error_check(lib.mxf_write_partition(self.ptr, partition.ptr))
+        error_check(lib.mxf_fill_to_kag(self.ptr, partition.ptr))
     
     def write_rip(self):
         cdef PartitionList part_list = PartitionList(self.partitions)

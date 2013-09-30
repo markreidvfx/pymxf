@@ -196,6 +196,13 @@ cdef class HeaderMetadata(object):
         set_item.model = self.model
         set_item.header= self
         return set_item
+    
+    def create_avid_metadictionary(self):
+        cdef MetaDataSet set_item = MetaDataSet()
+        error_check(lib.mxf_avid_create_default_metadictionary(self.ptr, &set_item.ptr)) 
+        set_item.model = self.model
+        set_item.header= self
+        return set_item
         
     def iter_sets(self):
         
