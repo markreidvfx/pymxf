@@ -9,6 +9,7 @@ ext_extra = {
     'libraries': ['MXF']
 }
 
+ext_util_source = [os.path.join('headers', 'label_table.c')]
 
 # Construct the modules that we find in the "build/cython" directory.
 ext_modules = []
@@ -20,10 +21,12 @@ for dirname, dirnames, filenames in os.walk(build_dir):
 
         path = os.path.join(dirname, filename)
         name = os.path.splitext(os.path.relpath(path, build_dir))[0].replace('/', '.')
-
+        sources=[path]
+        sources.extend(ext_util_source)
+        
         ext_modules.append(Extension(
             name,
-            sources=[path],
+            sources=sources,
             **ext_extra
         ))
 

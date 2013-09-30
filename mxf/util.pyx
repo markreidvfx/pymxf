@@ -3,7 +3,6 @@ from libc.stdio cimport sscanf
 
 from uuid import UUID
 cimport lib
-
 import uuid
 
 class Error(ValueError):
@@ -224,4 +223,25 @@ cdef class MXFUMID(object):
        
         
 
-
+def iter_labels_and_keys():
+    cdef lib.MXFList *label_list
+    
+    error_check(lib.load_label_table_essence_containers(&label_list))
+    
+    cdef lib.LabelTableItem *label_item
+    
+    cdef lib.MXFListIterator item_iter
+    lib.mxf_initialise_list_iter(&item_iter, label_list)
+    try:
+        while lib.mxf_next_list_iter_element(&item_iter):
+            label_item = <lib.LabelTableItem*> lib.mxf_get_iter_element(&item_iter)
+            name = None
+            key = None
+            if label_item.name:
+                name = label_item.name
+            if label_item.key:
+                key = mxfUL_to_UUID(label_item.key[0])
+            yield name,key
+    
+    finally:
+        lib.mxf_free_list(&label_list)
