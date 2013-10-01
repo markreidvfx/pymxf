@@ -15,7 +15,7 @@ cdef class MXFFile(object):
     cdef readonly list partitions
     
 cdef class File(object):
-    cdef lib.MXFFile *c_file
+    cdef lib.MXFFile *ptr
     cdef public HeaderMetadata header
     
     cdef public Partition header_partition
