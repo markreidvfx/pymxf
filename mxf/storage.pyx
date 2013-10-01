@@ -1,6 +1,6 @@
-
-cimport lib
+from libc.stdlib cimport malloc, free
 cimport stdio
+cimport lib
 from .util cimport error_check, uft16_to_bytes, UUID_to_mxfUL, mxfUL_to_UUID, UUID_to_mxfUUID, mxfUUID_to_UUID
 from .datamodel cimport DataModel, SetDef
 from .metadata cimport HeaderMetadata 
@@ -395,21 +395,22 @@ cdef class File(object):
     
 cdef class EssenceElement(object):
 
-    def read(self, lib.uint32_t num_bytes):
+    def read(self, lib.uint32_t num_bytes=4096):
+        cdef lib.uint32_t numRead =0
+        cdef lib.uint8_t *buffer
         
-        cdef lib.uint8_t buffer[4096]
-        cdef lib.uint32_t numRead =0 
-        
-        error_check(lib.mxf_read_essence_element_data(self.file.ptr, self.ptr, 4096, buffer, &numRead))
-        
-        if not numRead:
-            return None
-        
-        return buffer[:numRead]
-        
-        
-    
-    
+        buffer = <lib.uint8_t*> malloc( num_bytes )
+        if not buffer:
+            raise MemoryError("error allocating read buffer")
+        try:
+            error_check(lib.mxf_read_essence_element_data(self.file.ptr, self.ptr, num_bytes, buffer, &numRead))
+            if not numRead:
+                return None
+            return buffer[:numRead]
+        finally:
+            if buffer:
+                free(buffer)
+                
     def import_from_file(self, bytes path):
         cdef lib.uint32_t essenceBufferSize = 4096
         cdef size_t numRead
