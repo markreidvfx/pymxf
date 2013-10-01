@@ -180,11 +180,16 @@ def find_essence_coding_label(bytes name):
 
 def find_essence_container_label(bytes name):
     
-    for key_name, key in iter_labels_and_keys('essence_containers'):
+    for key_name, essence_key in iter_labels_and_keys('essence_containers'):
         if name == key_name:
-            return key
+            return essence_key
         
     raise IndexError("No label named: %s" % name)
+
+def find_essence_container_label_name(key):
+    for key_name, essence_key in iter_labels_and_keys('essence_containers'):
+        if key == essence_key:
+            return key_name
     
 
 def generate_umid():
