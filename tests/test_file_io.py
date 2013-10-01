@@ -294,7 +294,7 @@ class TestFile(unittest.TestCase):
         f.close()
         
         
-        
+        dump(test_file)
         f= mxf.open(test_file, 'r')
         
         header = f.read_header()
@@ -338,7 +338,16 @@ class TestFile(unittest.TestCase):
                #output.write("   %s %s %s %s %s\n" % (str(item.name), str(item.type_name), str(item.key), str(item.length), str(value)))
 
                print '  ', item.name, item.type_name,  item.key, item.length, value
-
+    def test_read_partitions(self):
+        test_file = os.path.join(files,'test_title.mxf')
+       #test_file = os.path.join(files,'output.mxf')
+         
+        f = mxf.open(test_file, 'r')
+        
+        print f.read_partitions()
+        print f.read_header()
+        f.seek(0)
+        print f.read_header_partition()
     def _test_mxffile(self):
         test_file = os.path.join(files,'test_title.mxf')
         

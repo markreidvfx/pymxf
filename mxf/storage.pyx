@@ -217,9 +217,6 @@ cdef class MXFFile(object):
         if not header_partition:
             self.seek(0)
             header_partition = self.read_header_partition()
-        
-        
-        
         cdef lib.mxfKey key
         cdef lib.uint8_t llen
         cdef lib.uint64_t length
@@ -411,7 +408,13 @@ cdef class File(object):
         pass
         #lib.mxf_clear_file_partitions(&self.partitions)
     
-    def seek(self, lib.int64_t position, int whence):
+    def seek(self, lib.int64_t position, bytes mode=b"SEEK_SET"):
+        cdef int whence
+        if mode.lower() == "seek_set":
+            whence = lib.SEEK_SET
+        else:
+            raise ValueError("invalid seek mode:%s" % mode)
+        
         error_check(lib.mxf_file_seek(self.ptr, position, whence))
         
     def tell(self):
@@ -420,7 +423,6 @@ cdef class File(object):
     def open_essence(self, bytes essence_element_type, bytes mode):
         cdef lib.mxfUL key
         UUID_to_mxfUL(find_essence_element_key(essence_element_type), &key)
-        
         cdef EssenceElement element = EssenceElement()
         
         if mode == 'w':
@@ -479,30 +481,112 @@ cdef class File(object):
 
     def update_partitions(self):
         error_check(lib.mxf_update_partitions(self.ptr, &self.partitions))
+        
+    def read_kl(self):
+        cdef lib.mxfKey key
+        cdef lib.uint8_t llen
+        cdef lib.uint64_t length 
+        error_check(lib.mxf_read_kl(self.ptr, &key, &llen, &length))
+        return mxfUL_to_UUID(key), llen, length
     
-    def read_header(self):
+    def read_next_nonfiller_kl(self):
+        cdef lib.mxfKey key
+        cdef lib.uint8_t llen
+        cdef lib.uint64_t length
+        error_check(lib.mxf_read_next_nonfiller_kl(self.ptr, &key, &llen, &length))
+        return mxfUL_to_UUID(key), llen, length
+    
+    def read_partition(self, key):
+        cdef lib.mxfKey ul
+        UUID_to_mxfUL(key, &ul)
+        cdef Partition part = Partition()
+        error_check(lib.mxf_read_partition(self.ptr, &ul, &part.ptr))
+        return part
+        
+    def read_header_partition(self):
+        cdef lib.mxfKey key
+        cdef lib.uint8_t llen
+        cdef lib.uint64_t length
+        if not lib.mxf_read_header_pp_kl(self.ptr, &key, &llen, &length):
+            raise IOError("Unable to read header")
+        
+        part = self.read_partition(mxfUL_to_UUID(key))
+        return part
+    
+    def read_header(self, Partition header_partition=None):
+        if not header_partition:
+            self.seek(0)
+            header_partition = self.read_header_partition()
         cdef lib.mxfKey key
         cdef lib.uint8_t llen
         cdef lib.uint64_t length
         
-        error_check(lib.mxf_read_header_pp_kl(self.ptr, &key, &llen, &length))
+        uuid_key, llen, length = self.read_next_nonfiller_kl()
+        UUID_to_mxfUL(uuid_key, &key)
 
-        self.header_partition = Partition()
-        error_check(lib.mxf_read_partition(self.ptr, &key, &self.header_partition.ptr))
+        if not lib.mxf_is_header_metadata(&key):
+            raise IOError("cannot find header")
         
-         # load the Data model plus AVID extensions
-        cdef DataModel model = DataModel()
-        self.header = HeaderMetadata(model)
-        
-        error_check(lib.mxf_read_next_nonfiller_kl(self.ptr, &key, &llen, &length))
-        assert lib.mxf_is_header_metadata(&key)
-        
-
-        error_check(lib.mxf_avid_read_filtered_header_metadata(self.ptr, 0, self.header.ptr, self.header_partition.ptr.headerByteCount,
+        cdef HeaderMetadata header = HeaderMetadata()
+        error_check(lib.mxf_avid_read_filtered_header_metadata(self.ptr, 0, header.ptr, header_partition.ptr.headerByteCount,
                                                                &key, llen, length))
         
-
-        return self.header
+        return header
+    
+    def read_partitions(self, Partition header_partition=None):
+        
+        if not header_partition:
+            self.seek(0)
+            header_partition = self.read_header_partition()
+            
+        cdef lib.mxfKey mxf_key
+        cdef lib.uint8_t llen
+        cdef lib.uint64_t length
+        
+        cdef lib.uint64_t this_partition
+        
+        cdef lib.MXFRIP rip
+        cdef lib.MXFRIPEntry *rip_entry
+        cdef lib.MXFListIterator list_iter
+        
+        cdef Partition part 
+        
+        partition_list = []
+        
+        # use the RIP if there is one
+        if lib.mxf_read_rip(self.ptr, &rip):
+            try:
+                lib.mxf_initialise_list_iter(&list_iter, &rip.entries)
+                while lib.mxf_next_list_iter_element(&list_iter):
+                    rip_entry = <lib.MXFRIPEntry*> lib.mxf_get_iter_element(&list_iter)
+                    self.seek(self.runin_len + rip_entry.thisPartition, "SEEK_SET")
+                    
+                    key, llen, length = self.read_kl()
+                    part = self.read_partition(key)
+                    partition_list.append(part)
+            finally:
+                lib.mxf_clear_rip(&rip)
+        else:
+            # start from footer partition and work back to the header partition
+            pos = header_partition.footer_position
+            if pos <= header_partition.position:
+                return
+            
+            
+            while True:
+                self.seek(self.runin_len + pos, "SEEK_SET")
+                key, llen, length = self.read_kl()
+                part = self.read_partition(key)
+                partition_list.append(part)
+                
+                print part.footer_position, part.position   
+                pos = part.previous_position
+                
+                if not pos <  part.position: 
+                    break
+            partition_list.reverse()
+                
+        return partition_list
     
     def close(self):
         lib.mxf_file_close(&self.ptr)
