@@ -44,17 +44,9 @@ class TestFile(unittest.TestCase):
         test_file = os.path.join(sandbox, 'test_new.mxf')
         f = mxf.open(test_file, 'w')
         
-        
-        #header = f.create_header()
-        
-        
-        
+        # Create Header Object
         header = mxf.metadata.HeaderMetadata()
         header.create_avid_metadictionary()
-        f.header = header
-        
-        #f.header_partition.append_essence_container(DVBased_50_625_50_ClipWrapped)
-        
         
         bodySID = 1
         indexSID = 2
@@ -72,8 +64,7 @@ class TestFile(unittest.TestCase):
                 print "%s.%s =" % (item.type_name, key),  data_item.value
                 if check:
                     assert value == data_item.value
-            
-        
+
         # Preface
         preface = header.create_set("Preface")
         set_and_check(preface, 'LastModifiedDate', now, False)
@@ -240,18 +231,19 @@ class TestFile(unittest.TestCase):
         # create header partition
         header_partition = f.create_partition("header")
         header_partition.append_essence_container(DVBased_50_625_50_ClipWrapped)
-        f.header_partition = header_partition
         
         f.write_partition(header_partition)
         
+        # Store current position in file for later
         header_pos = f.tell()
-        print header_pos
-
         f.write_header(header, header_partition)
+        
+        # Create body partition
         body = f.create_partition("body")
         f.write_partition(body)
-        
-        essence = f.open_essence("DVClipWrapped", 'w')
+
+        DVClipWrapped = mxf.util.find_essence_element_key('DVClipWrapped')
+        essence = f.create_essence(DVClipWrapped)
         
         dv_file = os.path.join(files, "input.dv")
         essence.import_from_file(dv_file)
@@ -261,11 +253,9 @@ class TestFile(unittest.TestCase):
         
         essence.close()
         
+        # create footer partition
         footer = f.create_partition("footer")
-        f.footer_partition = footer
         f.write_partition(footer)
-        #f.write_footer()
-        
         
         index_seg = mxf.storage.IndexTableSegment()
         indexSegmentUUID = uuid.uuid4()
@@ -348,33 +338,7 @@ class TestFile(unittest.TestCase):
         print f.read_header()
         f.seek(0)
         print f.read_header_partition()
-    def _test_mxffile(self):
-        test_file = os.path.join(files,'test_title.mxf')
-        
-        f = mxf.storage.MXFFile()
-        
-        f.open(test_file, 'r')
-        
-        print f.size
-        print f.min_llen
-        print f.seekable
-        print f.eof
-        
-        print f.tell()
-        
-        header_part = f.read_header_partition()
-        print header_part.essence_containers()
-        
-        f.read_partitions()
-        
-        header = f.read_header()
-        
-        for item in header.iter_sets():
-            print item
-        
-        for p in f.partitions:
-            print p, p.indexSID, p.bodySID, p.major_version, p.minor_version
-            
+
         
 
 if __name__ == '__main__':
