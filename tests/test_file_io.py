@@ -255,6 +255,7 @@ class TestFile(unittest.TestCase):
         duration = essence.size/ frameSize
         imageSize = essence.size
         
+        essence.complete_write()
         essence.close()
         
         # create footer partition
@@ -307,7 +308,7 @@ class TestFile(unittest.TestCase):
         #output.close()
         f.close()
         
-    def _test_open(self):
+    def test_open(self):
         
        test_file = os.path.join(files,'test_title.mxf')
        #test_file = os.path.join(files,'output.mxf')
@@ -342,6 +343,26 @@ class TestFile(unittest.TestCase):
         print f.read_header()
         f.seek(0)
         print f.read_header_partition()
+        
+    def test_iter_esssence_data(self):
+        test_file = os.path.join(files,'test_title.mxf')
+        #test_file = os.path.join(files,'output.mxf')
+        f = mxf.open(test_file, 'r')
+        
+        output = os.path.join(sandbox, 'outfile')
+        
+        out = open(output, 'w')
+        
+        for essence in f.iter_esssence_data():
+            while True:
+                data = essence.read(1024)
+                if not data:
+                    break
+                out.write(data)
+                
+            essence.close()
+                
+                
 
         
 

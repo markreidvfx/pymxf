@@ -7,7 +7,7 @@ from .metadata cimport HeaderMetadata
 
 import datetime
 
-from .util import find_essence_element_key,find_op_pattern_name,find_op_pattern
+from .util import find_essence_element_key, find_op_pattern_name, find_op_pattern, is_gc_essence_element, is_partition_pack
 
 
 
@@ -247,6 +247,12 @@ cdef class File(object):
         cdef lib.uint64_t length
         error_check(lib.mxf_read_next_nonfiller_kl(self.ptr, &key, &llen, &length))
         return mxfUL_to_UUID(key), llen, length
+    def read_header_pp_kl(self):
+        cdef lib.mxfKey key
+        cdef lib.uint8_t llen
+        cdef lib.uint64_t length
+        error_check(lib.mxf_read_header_pp_kl(self.ptr, &key, &llen, &length))
+        return mxfUL_to_UUID(key), llen, length
     
     def read_partition(self, key):
         cdef lib.mxfKey ul
@@ -340,6 +346,26 @@ cdef class File(object):
                 
         return partition_list
     
+    def iter_esssence_data(self):
+        
+        cdef EssenceElement element
+        cdef lib.mxfKey mxf_key
+        cdef lib.uint8_t llen
+        cdef lib.uint64_t length
+        for partition in self.read_partitions():
+            
+            if partition.type_name == 'Body':
+                self.seek(partition.position)
+                key, llen, length = self.read_next_nonfiller_kl()
+                print is_partition_pack(key)                
+                self.read_partition(key)
+                key, llen, length = self.read_next_nonfiller_kl()
+                element = EssenceElement()
+                UUID_to_mxfUL(key, &mxf_key)
+                error_check(lib.mxf_open_essence_element_read(self.ptr, &mxf_key, llen, length, &element.ptr))
+                element.file = self
+                yield element
+                
     def close(self):
         lib.mxf_file_close(&self.ptr)
         
@@ -368,6 +394,20 @@ cdef class File(object):
             return lib.mxf_file_eof(self.ptr) == 1
     
 cdef class EssenceElement(object):
+
+    def read(self, lib.uint32_t num_bytes):
+        
+        cdef lib.uint8_t buffer[4096]
+        cdef lib.uint32_t numRead =0 
+        
+        error_check(lib.mxf_read_essence_element_data(self.file.ptr, self.ptr, 4096, buffer, &numRead))
+        
+        if not numRead:
+            return None
+        
+        return buffer[:numRead]
+        
+        
     
     
     def import_from_file(self, bytes path):
@@ -392,8 +432,9 @@ cdef class EssenceElement(object):
                 done= 1
             error_check(lib.mxf_write_essence_element_data(self.file.ptr, self.ptr, buffer, <lib.uint32_t> numRead))
         stdio.fclose(c_file)
-    def close(self):
+    def complete_write(self):
         error_check(lib.mxf_finalize_essence_element_write(self.file.ptr, self.ptr))
+    def close(self):
         lib.mxf_close_essence_element(&self.ptr)
         
     property size:

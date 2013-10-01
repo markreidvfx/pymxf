@@ -107,6 +107,16 @@ def get_Null_UMID():
     return umid
 
 NULL_UL = mxfUL_to_UUID(lib.g_Null_UL)
+
+def is_gc_essence_element(key):
+    cdef lib.mxfUL ul
+    UUID_to_mxfUL(key, &ul)
+    return lib.mxf_is_gc_essence_element(&ul) == 1
+
+def is_partition_pack(key):
+    cdef lib.mxfUL ul
+    UUID_to_mxfUL(key, &ul)
+    return lib.mxf_is_partition_pack(&ul) == 1
     
 
 OPERATION_PATTERNS = {
