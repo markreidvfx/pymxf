@@ -16,11 +16,11 @@ cdef class MXFFile(object):
     
 cdef class File(object):
     cdef lib.MXFFile *c_file
-    cdef readonly HeaderMetadata header
+    cdef public HeaderMetadata header
     
-    cdef Partition header_partition
-    cdef Partition body_partition
-    cdef Partition footer_partition
+    cdef public Partition header_partition
+    cdef public Partition body_partition
+    cdef public Partition footer_partition
     
     cdef lib.MXFFilePartitions partitions
     

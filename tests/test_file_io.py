@@ -39,10 +39,21 @@ class TestFile(unittest.TestCase):
      
     def test_new(self):
         
+        DVBased_50_625_50_ClipWrapped =  mxf.util.find_essence_container_label("DVBased_50_625_50_ClipWrapped")
+
         test_file = os.path.join(sandbox, 'test_new.mxf')
         f = mxf.open(test_file, 'w')
         
-        header = f.create_header()
+        
+        #header = f.create_header()
+        
+        
+        
+        header = mxf.metadata.HeaderMetadata()
+        header.create_avid_metadictionary()
+        f.header = header
+        
+        #f.header_partition.append_essence_container(DVBased_50_625_50_ClipWrapped)
         
         
         bodySID = 1
@@ -64,7 +75,6 @@ class TestFile(unittest.TestCase):
             
         
         # Preface
-        DVBased_50_625_50_ClipWrapped =  mxf.util.find_essence_container_label("DVBased_50_625_50_ClipWrapped")
         preface = header.create_set("Preface")
         set_and_check(preface, 'LastModifiedDate', now, False)
         set_and_check(preface, 'Version', 0x0102)
@@ -226,9 +236,20 @@ class TestFile(unittest.TestCase):
         set_and_check(ess_container, 'LinkedPackageUID', sourcePackageUMID)
         set_and_check(ess_container, 'IndexSID', indexSID)
         set_and_check(ess_container, 'BodySID', bodySID)
-
-        f.write_header()
         
+        # create header partition
+        header_partition = f.create_partition("header")
+        header_partition.append_essence_container(DVBased_50_625_50_ClipWrapped)
+        f.header_partition = header_partition
+        
+        f.write_partition(header_partition)
+        
+        header_pos = f.tell()
+        print header_pos
+
+        f.write_header(header, header_partition)
+        body = f.create_partition("body")
+        f.write_partition(body)
         
         essence = f.open_essence("DVClipWrapped", 'w')
         
@@ -240,7 +261,10 @@ class TestFile(unittest.TestCase):
         
         essence.close()
         
-        f.write_footer()
+        footer = f.create_partition("footer")
+        f.footer_partition = footer
+        f.write_partition(footer)
+        #f.write_footer()
         
         
         index_seg = mxf.storage.IndexTableSegment()
@@ -257,13 +281,13 @@ class TestFile(unittest.TestCase):
         index_seg.slice_count = 0
         index_seg.pos_table_count = 0
         
-        f.write_index(index_seg)
+        f.write_index(index_seg,footer)
         
         for item in (durationItem1 ,durationItem2, durationItem3, durationItem4, durationItem5):
             item.value = duration
-        imageSizeItem = imageSize
+        ImageSizeItem.value = imageSize
         
-        f.update_header()
+        f.update_header(header, header_partition, header_pos)
         
         f.update_partitions()
         
@@ -289,7 +313,7 @@ class TestFile(unittest.TestCase):
         #output.close()
         f.close()
         
-    def test_open(self):
+    def _test_open(self):
         
        test_file = os.path.join(files,'test_title.mxf')
        #test_file = os.path.join(files,'output.mxf')
@@ -315,7 +339,7 @@ class TestFile(unittest.TestCase):
 
                print '  ', item.name, item.type_name,  item.key, item.length, value
 
-    def test_mxffile(self):
+    def _test_mxffile(self):
         test_file = os.path.join(files,'test_title.mxf')
         
         f = mxf.storage.MXFFile()
@@ -342,36 +366,6 @@ class TestFile(unittest.TestCase):
         for p in f.partitions:
             print p, p.indexSID, p.bodySID, p.major_version, p.minor_version
             
-    def test_mxffile_new(self):
-        test_file = os.path.join(sandbox, 'test_new_lowlevel.mxf')
-        f = mxf.storage.MXFFile()
-        
-        f.open(test_file, 'w')
-        
-        header_part = f.create_partition("Header")
-        body = f.create_partition("Body")
-        footer = f.create_partition("Footer")
-        print header_part, body, footer
-        
-        
-        header_part.append_essence_container(mxf.util.find_essence_container_label("DVBased_50_625_50_ClipWrapped"))
-        
-        model = mxf.datamodel.DataModel()
-        header = mxf.metadata.HeaderMetadata(model)
-        dictionary = header.create_avid_metadictionary()
-        preface = header.create_set("Preface")
-        
-        f.write_partition(header_part)
-        f.write_header(header_part, header)
-        
-        f.write_partition(body)
-        f.write_partition(footer)
-        
-        f.update_partitions()
-        f.close()
-        
-        
-        dump(test_file)
         
 
 if __name__ == '__main__':

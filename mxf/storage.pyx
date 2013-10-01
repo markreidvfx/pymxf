@@ -397,6 +397,9 @@ cdef class File(object):
         
         elif mode  == 'w':
             error_check(lib.mxf_disk_file_open_new(path, &self.c_file))
+            lib.mxf_initialise_file_partitions(&self.partitions)
+            self.min_llen = 4
+            #lib.mxf_file_set_min_llen(self.c_file, 4)
             
         elif mode == 'rw':
             raise NotImplementedError("mode: %s" % mode)
@@ -411,7 +414,9 @@ cdef class File(object):
     def seek(self, lib.int64_t position, int whence):
         error_check(lib.mxf_file_seek(self.c_file, position, whence))
         
-        
+    def tell(self):
+        return lib.mxf_file_tell(self.c_file)
+
     def open_essence(self, bytes essence_element_type, bytes mode):
         cdef lib.mxfUL key
         UUID_to_mxfUL(find_essence_element_key(essence_element_type), &key)
@@ -427,91 +432,51 @@ cdef class File(object):
         element.file = self
         
         return element
+    
+    def create_partition(self, bytes kind=None):
+        cdef Partition part = Partition()
+        error_check(lib.mxf_append_new_partition(&self.partitions, &part.ptr))
         
+        if not kind:
+            kind = b""
         
-    def create_header(self):
+        if kind.lower() == "header":
+            part.ptr.key = lib.MXF_PP_K_ClosedComplete_Header
+            part.ptr.majorVersion = 1
+            part.ptr.minorVersion = 2
+            part.ptr.kagSize = 0x100
+            part.ptr.operationalPattern = lib.MXF_OP_L_atom_NTracks_1SourceClip
+            
+        elif kind.lower() == 'body':
+            part.ptr.key = lib.MXF_PP_K_ClosedComplete_Body
+            part.ptr.kagSize = 0x200
+            part.ptr.bodySID = 1
+            
+        elif kind.lower() == 'footer':
+            part.ptr.key = lib.MXF_PP_K_ClosedComplete_Footer
+            part.ptr.kagSize = 0x200
+            part.ptr.indexSID = 2
+                
+        return part
+    
+    def write_partition(self, Partition partition):
+        error_check(lib.mxf_write_partition(self.c_file, partition.ptr))
+        error_check(lib.mxf_fill_to_kag(self.c_file, partition.ptr))
 
-        lib.mxf_initialise_file_partitions(&self.partitions)
-        
-        lib.mxf_file_set_min_llen(self.c_file, 4)
-        
-        # load the Data model plus AVID extensions
-        cdef DataModel model = DataModel()
-        
-        
-        self.header_partition = Partition()
-        
-        # write the header partition pack
-        error_check(lib.mxf_append_new_partition(&self.partitions, &self.header_partition.ptr))
-        
-        self.header_partition.ptr.key = lib.MXF_PP_K_ClosedComplete_Header
-        self.header_partition.ptr.majorVersion = 1
-        self.header_partition.ptr.minorVersion = 2
-        self.header_partition.ptr.kagSize = 0x100
-        self.header_partition.ptr.operationalPattern = lib.MXF_OP_L_atom_NTracks_1SourceClip
-        
-        error_check(lib.mxf_append_partition_esscont_label(self.header_partition.ptr, &lib.MXF_EC_L_DVBased_50_625_50_ClipWrapped ))
-        
-        error_check(lib.mxf_write_partition(self.c_file, self.header_partition.ptr))
-        error_check(lib.mxf_fill_to_kag(self.c_file, self.header_partition.ptr))
-        
-        # create the header metadata
-        
-        cdef HeaderMetadata header = HeaderMetadata(model)
-        
-        # create the Avid meta-dictionary
-        cdef lib.MXFMetadataSet* metaDictSet
-        error_check(lib.mxf_avid_create_default_metadictionary(header.ptr, &metaDictSet))
+    def write_header(self, HeaderMetadata header, Partition partition):
+        error_check(lib.mxf_mark_header_start(self.c_file, partition.ptr))
+        error_check(lib.mxf_avid_write_header_metadata(self.c_file, header.ptr, partition.ptr))
+        error_check(lib.mxf_fill_to_kag(self.c_file, partition.ptr))
+        error_check(lib.mxf_mark_header_end(self.c_file, partition.ptr))
 
-        self.header = header
-
-        self.body_partition = Partition()
-        self.footer_partition = Partition()
-
-        return header
-
-    def write_header(self):
-        self.header_metadata_pos = lib.mxf_file_tell(self.c_file)
-        assert self.header_metadata_pos >= 0
-        error_check(lib.mxf_mark_header_start(self.c_file, self.header_partition.ptr))
-        error_check(lib.mxf_avid_write_header_metadata(self.c_file, self.header.ptr, self.header_partition.ptr))
-        error_check(lib.mxf_fill_to_kag(self.c_file, self.header_partition.ptr))
-        error_check(lib.mxf_mark_header_end(self.c_file, self.header_partition.ptr))
-        
-        cdef lib.uint32_t bodySID = 1
-        
-        error_check(lib.mxf_append_new_from_partition(&self.partitions, self.header_partition.ptr, &self.body_partition.ptr))
-        
-        self.body_partition.ptr.key = lib.MXF_PP_K_ClosedComplete_Body
-        self.body_partition.ptr.kagSize = 0x200
-        self.body_partition.ptr.bodySID = bodySID
-        
-        error_check(lib.mxf_write_partition(self.c_file, self.body_partition.ptr))
-        error_check(lib.mxf_fill_to_kag(self.c_file, self.body_partition.ptr))
-        
-    def write_footer(self):
-        cdef lib.uint32_t indexSID = 2
-        
-        error_check(lib.mxf_append_new_from_partition(&self.partitions, self.header_partition.ptr, &self.footer_partition.ptr))
-        
-        self.footer_partition.ptr.key = lib.MXF_PP_K_ClosedComplete_Footer
-        self.footer_partition.ptr.kagSize = 0x200
-        self.footer_partition.ptr.indexSID = indexSID
-        
-        error_check(lib.mxf_write_partition(self.c_file, self.footer_partition.ptr))
-        error_check(lib.mxf_fill_to_kag(self.c_file, self.footer_partition.ptr))
-        
-    def write_index(self, IndexTableSegment index):
+    def write_index(self, IndexTableSegment index, Partition partition):
         error_check(lib.mxf_write_index_table_segment(self.c_file, index.ptr))
         error_check(lib.mxf_fill_to_kag(self.c_file, self.footer_partition.ptr))
         
-    def update_header(self):
-        error_check(lib.mxf_file_seek(self.c_file, self.header_metadata_pos, lib.SEEK_SET));
-        error_check(lib.mxf_mark_header_start(self.c_file, self.header_partition.ptr));
-        error_check(lib.mxf_avid_write_header_metadata(self.c_file, self.header.ptr, self.header_partition.ptr));
-        error_check(lib.mxf_fill_to_kag(self.c_file, self.header_partition.ptr));
-        error_check(lib.mxf_mark_header_end(self.c_file, self.header_partition.ptr));
-        
+    def update_header(self, HeaderMetadata header, Partition partition, lib.int64_t position):
+        error_check(lib.mxf_file_seek(self.c_file, position, lib.SEEK_SET));
+        self.write_header(header, partition)
+
     def update_partitions(self):
         error_check(lib.mxf_update_partitions(self.c_file, &self.partitions))
     
@@ -541,6 +506,30 @@ cdef class File(object):
     
     def close(self):
         lib.mxf_file_close(&self.c_file)
+        
+    property size:
+        def __get__(self):
+            return lib.mxf_file_size(self.c_file)
+        
+    property min_llen:
+        def __get__(self):
+            return lib.mxf_get_min_llen(self.c_file)
+        def __set__(self, lib.uint8_t value):
+            lib.mxf_file_set_min_llen(self.c_file, value)
+            
+    property runin_len:
+        def __get__(self):
+            return lib.mxf_get_runin_len(self.c_file)
+        def __set__(self, lib.uint16_t value):
+            lib.mxf_set_runin_len(self.c_file, value)
+
+    property seekable:
+        def __get__(self):
+            return lib.mxf_file_is_seekable(self.c_file) == 1
+            
+    property eof:
+        def __get__(self):
+            return lib.mxf_file_eof(self.c_file) == 1
     
 cdef class EssenceElement(object):
     
@@ -566,7 +555,7 @@ cdef class EssenceElement(object):
                 
                 done= 1
             error_check(lib.mxf_write_essence_element_data(self.file.c_file, self.ptr, buffer, <lib.uint32_t> numRead))
-    
+        stdio.fclose(c_file)
     def close(self):
         error_check(lib.mxf_finalize_essence_element_write(self.file.c_file, self.ptr))
         lib.mxf_close_essence_element(&self.ptr)
@@ -600,7 +589,7 @@ cdef class EssenceElement2(object):
                 
                 done= 1
             error_check(lib.mxf_write_essence_element_data(self.file.ptr, self.ptr, buffer, <lib.uint32_t> numRead))
-    
+        stdio.fclose(c_file)
     def close(self):
         error_check(lib.mxf_finalize_essence_element_write(self.file.ptr, self.ptr))
         lib.mxf_close_essence_element(&self.ptr)
