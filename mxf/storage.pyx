@@ -7,7 +7,7 @@ from .metadata cimport HeaderMetadata
 
 import datetime
 
-from .util import find_essence_element_key,find_op_pattern_name
+from .util import find_essence_element_key,find_op_pattern_name,find_op_pattern
 
 
 
@@ -65,10 +65,21 @@ cdef class Partition(object):
         def __get__(self):
             return lib.mxf_partition_is_complete(&self.ptr.key) == 1
         
+    property operational_pattern_name:
+        def __get__(self):
+            operation_pattern = find_op_pattern_name(mxfUL_to_UUID(self.ptr.operationalPattern))
+            if operation_pattern:
+                return operation_pattern[1]
+        def __set__(self, bytes value):
+            self.operational_pattern = find_op_pattern(value)
+
     property operational_pattern:
         def __get__(self):
-            format, name = find_op_pattern_name(mxfUL_to_UUID(self.ptr.operationalPattern))
-            return name
+            return mxfUL_to_UUID(self.ptr.operationalPattern)
+        def __set__(self, value):
+            cdef lib.mxfUL key
+            UUID_to_mxfUL(value, &key)
+            self.ptr.operationalPattern = key
     
     property format:
         def __get__(self):
@@ -150,8 +161,7 @@ cdef class File(object):
             raise ValueError("invalid mode: %s" % mode)
         
     def __dealloc__(self):
-        pass
-        #lib.mxf_clear_file_partitions(&self.partitions)
+       pass
     
     def seek(self, lib.int64_t position, bytes mode=b"SEEK_SET"):
         cdef int whence
@@ -185,7 +195,7 @@ cdef class File(object):
             part.ptr.majorVersion = 1
             part.ptr.minorVersion = 2
             part.ptr.kagSize = 0x100
-            part.ptr.operationalPattern = lib.MXF_OP_L_atom_NTracks_1SourceClip
+            #part.ptr.operationalPattern = lib.MXF_OP_L_atom_NTracks_1SourceClip
             
         elif kind.lower() == 'body':
             part.ptr.key = lib.MXF_PP_K_ClosedComplete_Body

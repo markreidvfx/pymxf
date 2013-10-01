@@ -232,6 +232,10 @@ class TestFile(unittest.TestCase):
         header_partition = f.create_partition("header")
         header_partition.append_essence_container(DVBased_50_625_50_ClipWrapped)
         
+        print header_partition.operational_pattern_name
+        header_partition.operational_pattern_name = "NTracks_1SourceClip"
+        print header_partition.operational_pattern_name
+        
         f.write_partition(header_partition)
         
         # Store current position in file for later
@@ -284,7 +288,7 @@ class TestFile(unittest.TestCase):
         f.close()
         
         
-        dump(test_file)
+        #dump(test_file)
         f= mxf.open(test_file, 'r')
         
         header = f.read_header()

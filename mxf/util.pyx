@@ -106,6 +106,9 @@ def get_Null_UMID():
     umid.label = lib.g_Null_UMID
     return umid
 
+NULL_UL = mxfUL_to_UUID(lib.g_Null_UL)
+    
+
 OPERATION_PATTERNS = {
 'atom':{'1Track_1SourceClip'  : mxfUL_to_UUID(lib.op_atom_1Track_1SourceClip),
         '1Track_NSourceClips' : mxfUL_to_UUID(lib.op_atom_1Track_NSourceClips),
@@ -118,15 +121,26 @@ OPERATION_PATTERNS = {
         },
 '1b':  {'MultiTrack_Stream_External': mxfUL_to_UUID(lib.op_1b_MultiTrack_Stream_External)}                      
 }
-def find_op_pattern(bytes name, bytes pattern):
+def find_op_pattern(bytes name, bytes pattern=None):
+    
+    if pattern is None:
+        for format, value in  OPERATION_PATTERNS.items():
+            for item_name, type_uuid in value.items():
+                if name == item_name:
+                    return type_uuid
+        raise ValueError("Unkown operation pattern: %s" % name)
     
     return OPERATION_PATTERNS[name][pattern]
 
+
 def find_op_pattern_name(item_uuid):
+    if item_uuid == NULL_UL:
+        return None
     for format, value in OPERATION_PATTERNS.items():
         for name, type_uuid in value.items():
             if item_uuid == type_uuid:
                 return format, name
+            
     raise ValueError("Uknown operation pattern: %s" % (str(item_uuid)))
 
 DATA_DEFS = {
