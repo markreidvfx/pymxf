@@ -410,6 +410,9 @@ cdef class EssenceElement(object):
         finally:
             if buffer:
                 free(buffer)
+    
+    def write(self, bytes data):
+        error_check(lib.mxf_write_essence_element_data(self.file.ptr, self.ptr,<lib.uint8_t*> data, len(data)))
                 
     def import_from_file(self, bytes path):
         cdef lib.uint32_t essenceBufferSize = 4096

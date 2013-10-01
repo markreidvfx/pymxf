@@ -250,7 +250,15 @@ class TestFile(unittest.TestCase):
         essence = f.create_essence(DVClipWrapped)
         
         dv_file = os.path.join(files, "input.dv")
-        essence.import_from_file(dv_file)
+        
+        input_file = open(dv_file)
+        while True:
+            data = input_file.read(1024)
+            if not data:
+                break
+            essence.write(data)
+        
+        #essence.import_from_file(dv_file)
         
         duration = essence.size/ frameSize
         imageSize = essence.size
