@@ -4,6 +4,7 @@
 cdef extern from "mxf/mxf.h":
 
     cdef int SEEK_SET
+    cdef int SEEK_CUR
     cdef int SEEK_END
     
     ctypedef struct MXFFile:
