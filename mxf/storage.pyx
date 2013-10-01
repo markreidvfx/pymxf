@@ -167,6 +167,10 @@ cdef class File(object):
         cdef int whence
         if mode.lower() == "seek_set":
             whence = lib.SEEK_SET
+        elif mode.lower() == 'seek_cur':
+            whence = lib.SEEK_CUR
+        elif mode.lower() == 'seek_end':
+            whence = lib.SEEK_END
         else:
             raise ValueError("invalid seek mode:%s" % mode)
         
