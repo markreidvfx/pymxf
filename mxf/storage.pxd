@@ -30,5 +30,9 @@ cdef class EssenceElement(object):
     cdef lib.MXFEssenceElement *ptr
     cdef File file
     
+cdef class EssenceElement2(object):
+    cdef lib.MXFEssenceElement *ptr
+    cdef MXFFile file
+    
 cdef class IndexTableSegment(object):
     cdef lib.MXFIndexTableSegment *ptr

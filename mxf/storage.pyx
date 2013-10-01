@@ -161,6 +161,14 @@ cdef class MXFFile(object):
         else:
             raise ValueError("invalid mode: %s" % mode)
         
+    def create_essence(self, essence_kind):
+        cdef lib.mxfUL key
+        UUID_to_mxfUL(essence_kind, &key)
+        cdef EssenceElement2 element = EssenceElement2()
+        error_check(lib.mxf_open_essence_element_write(self.ptr, &key, 8, 0, &element.ptr))
+        element.file = self
+        return element
+        
     def seek(self, lib.int64_t position, bytes mode=b"SEEK_SET"):
         cdef int whence
         if mode.lower() == "seek_set":
@@ -294,13 +302,15 @@ cdef class MXFFile(object):
         cdef Partition last_part = None
         
         if self.partitions:
-            last_part = self.partitions[-1]
+            last_part = self.partitions[0]
         
         cdef Partition part = Partition()
-        error_check(lib.mxf_create_partition(&part.ptr))
+        
         
         if last_part:
-            error_check(lib.mxf_initialise_with_partition(last_part.ptr, part.ptr))
+            error_check(lib.mxf_create_from_partition(last_part.ptr, &part.ptr))
+        else:
+            error_check(lib.mxf_create_partition(&part.ptr))
 
         self.partitions.append(part)
         
@@ -316,9 +326,11 @@ cdef class MXFFile(object):
             part.ptr.key = lib.MXF_PP_K_ClosedComplete_Body
             part.ptr.kagSize = 0x200
             part.ptr.bodySID = 1
+            part.ptr.indexSID = 2
         elif type_name.lower() == "footer":
             part.ptr.key = lib.MXF_PP_K_ClosedComplete_Footer
             part.ptr.kagSize = 0x200
+            part.ptr.bodySID  = 1
             part.ptr.indexSID = 2
             
         return part
@@ -327,16 +339,23 @@ cdef class MXFFile(object):
         error_check(lib.mxf_write_partition(self.ptr, partition.ptr))
         error_check(lib.mxf_fill_to_kag(self.ptr, partition.ptr))
         
-    def write_header(self, Partition partition, HeaderMetadata header):
-        
+    def write_header(self, HeaderMetadata header, Partition partition):
         error_check(lib.mxf_mark_header_start(self.ptr, partition.ptr))
-        error_check(lib.mxf_write_header_metadata(self.ptr, header.ptr))
+        error_check(lib.mxf_avid_write_header_metadata(self.ptr, header.ptr, partition.ptr))
         error_check(lib.mxf_fill_to_kag(self.ptr, partition.ptr))
         error_check(lib.mxf_mark_header_end(self.ptr, partition.ptr))
-    
+
     def write_rip(self):
         cdef PartitionList part_list = PartitionList(self.partitions)
         error_check(lib.mxf_write_rip(self.ptr, &part_list.ptr))
+        
+    def write_index(self, IndexTableSegment index, Partition partition):
+        error_check(lib.mxf_write_index_table_segment(self.ptr, index.ptr))
+        error_check(lib.mxf_fill_to_kag(self.ptr, partition.ptr))
+        
+    def update_header(self, HeaderMetadata header, Partition partition, lib.int64_t header_position):
+        self.seek(header_position, 'SEEK_SET')
+        self.write_header(header, partition)
         
     def update_partitions(self):
         cdef PartitionList part_list = PartitionList(self.partitions)
@@ -550,6 +569,40 @@ cdef class EssenceElement(object):
     
     def close(self):
         error_check(lib.mxf_finalize_essence_element_write(self.file.c_file, self.ptr))
+        lib.mxf_close_essence_element(&self.ptr)
+        
+    property size:
+        def __get__(self):
+            if self.ptr:
+                return self.ptr.totalLen
+            
+cdef class EssenceElement2(object):
+    
+    
+    def import_from_file(self, bytes path):
+        cdef lib.uint32_t essenceBufferSize = 4096
+        cdef size_t numRead
+        
+        cdef lib.uint8_t buffer[4096]
+        cdef int done = 0
+        
+        
+        cdef stdio.FILE *c_file
+        
+        c_file = stdio.fopen(path, 'rb')
+        
+        while not done:
+            numRead = stdio.fread(buffer, 1, essenceBufferSize, c_file)
+            
+            if numRead < essenceBufferSize:
+                if not stdio.feof(c_file):
+                    raise IOError("Failed to read bytes from %s" % path)
+                
+                done= 1
+            error_check(lib.mxf_write_essence_element_data(self.file.ptr, self.ptr, buffer, <lib.uint32_t> numRead))
+    
+    def close(self):
+        error_check(lib.mxf_finalize_essence_element_write(self.file.ptr, self.ptr))
         lib.mxf_close_essence_element(&self.ptr)
         
     property size:
