@@ -346,7 +346,7 @@ int load_label_table_essence_element_keys(MXFList** label_list)
     ADD_ITEM_EE(UncClipWrapped);
     ADD_ITEM_EE(IMX);
     ADD_ITEM_EE(AvidUnc10BitClipWrapped);
-    //ADD_ITEM_EE(AvidUncRGBA);
+    ADD_ITEM_EE(AvidUncRGBA);
     
     *label_list = newlist;
     return 1;
