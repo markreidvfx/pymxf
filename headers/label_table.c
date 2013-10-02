@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 #include <label_table.h>
 #include <mxf/mxf_macros.h>
 
