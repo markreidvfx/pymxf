@@ -167,19 +167,15 @@ DATA_DEFS = {
 def find_datadef(bytes name):
     return DATA_DEFS[name]
 
-ESSENCE_ELEMENT_KEYS = {
-'AvidMJPEGClipWrapped': mxfUL_to_UUID(lib.EE_AvidMJPEGClipWrapped),
-'AvidMPEGClipWrapped': mxfUL_to_UUID(lib.EE_AvidMPEGClipWrapped),
-'DNxHD': mxfUL_to_UUID(lib.EE_DNxHD),
-'DVClipWrapped': mxfUL_to_UUID(lib.EE_DVClipWrapped),
-'BWFClipWrapped': mxfUL_to_UUID(lib.EE_BWFClipWrapped),
-'AES3ClipWrapped': mxfUL_to_UUID(lib.EE_AES3ClipWrapped),
-'UncClipWrapped': mxfUL_to_UUID(lib.EE_UncClipWrapped),
-'IMX': mxfUL_to_UUID(lib.EE_IMX),
-'AvidUnc10BitClipWrapped': mxfUL_to_UUID(lib.EE_AvidUnc10BitClipWrapped),
-}
 def find_essence_element_key(bytes name):
-    return ESSENCE_ELEMENT_KEYS[name]
+    for key_name, key in iter_labels_and_keys('essence_element_keys'):
+        if name == key_name:
+            return key
+
+def find_essence_element_key_name(key):
+    for key_name, item_key in iter_labels_and_keys('essence_element_keys'):
+        if key == item_key:
+            return key_name
 
 def find_essence_coding_label(bytes name):
     for key_name, key in iter_labels_and_keys('essence_coding_labels'):
@@ -257,7 +253,9 @@ def iter_labels_and_keys(bytes kind):
     if kind == 'essence_containers':
         error_check(lib.load_label_table_essence_containers(&label_list))
     elif kind == 'essence_coding_labels':
-        error_check(lib.load_label_table_coding_labels(&label_list))
+        error_check(lib.load_label_table_essence_coding_labels(&label_list))
+    elif kind == 'essence_element_keys':
+        error_check(lib.load_label_table_essence_element_keys(&label_list))
     else:
         raise ValueError("Invalid kind: %s" % kind)
     

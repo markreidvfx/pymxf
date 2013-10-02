@@ -357,11 +357,13 @@ class TestFile(unittest.TestCase):
         #test_file = os.path.join(files,'output.mxf')
         f = mxf.open(test_file, 'r')
         
-        output = os.path.join(sandbox, 'outfile')
         
-        out = open(output, 'w')
         
-        for essence in f.iter_esssence_data():
+        for i, essence in enumerate(f.iter_esssence_data()):
+            output = os.path.join(sandbox, 'outfile%d' % i)
+            out = open(output, 'w')
+            
+            print essence
             while True:
                 data = essence.read(1024)
                 if not data:

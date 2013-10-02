@@ -7,7 +7,7 @@ from .metadata cimport HeaderMetadata
 
 import datetime
 
-from .util import find_essence_element_key, find_op_pattern_name, find_op_pattern, is_gc_essence_element, is_partition_pack
+from .util import find_essence_element_key, find_essence_element_key_name, find_op_pattern_name, find_op_pattern, is_gc_essence_element, is_partition_pack
 
 
 
@@ -356,8 +356,7 @@ cdef class File(object):
             
             if partition.type_name == 'Body':
                 self.seek(partition.position)
-                key, llen, length = self.read_next_nonfiller_kl()
-                print is_partition_pack(key)                
+                key, llen, length = self.read_next_nonfiller_kl()              
                 self.read_partition(key)
                 key, llen, length = self.read_next_nonfiller_kl()
                 element = EssenceElement()
@@ -441,11 +440,28 @@ cdef class EssenceElement(object):
     def close(self):
         lib.mxf_close_essence_element(&self.ptr)
         
+    def __repr__(self):
+        return '<%s.%s of %s %s at 0x%x>' % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.format,
+            str(self.key),
+            id(self),
+        )
+        
     property size:
         def __get__(self):
             if self.ptr:
                 return self.ptr.totalLen
-        
+    property key:
+        def __get__(self):
+            return mxfUL_to_UUID(self.ptr.key)
+    property format:
+        def __get__(self):
+            name = find_essence_element_key_name(self.key)
+            if not name:
+                return "Unknown"
+            return name
 cdef class IndexTableSegment(object):
     
     def __init__(self):

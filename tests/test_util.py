@@ -13,6 +13,9 @@ class TestUtil(unittest.TestCase):
         print 'essence_coding_labels'
         for name, key in util.iter_labels_and_keys('essence_coding_labels'):
             print '  ', name, '=', key
-    
+        
+        print 'essence_element_keys'
+        for name, key in util.iter_labels_and_keys('essence_element_keys'):
+            print '  ', name, '=', key
 if __name__ == '__main__':
     unittest.main()

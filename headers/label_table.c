@@ -204,7 +204,7 @@ fail:
 CHK_OFAIL(register_label_table_item(newlist, #name, &MXF_CMDEF_L(name)));
 
 
-int load_label_table_coding_labels(MXFList** label_list)
+int load_label_table_essence_coding_labels(MXFList** label_list)
 {
     MXFList* newlist;
     
@@ -324,7 +324,39 @@ fail:
 }
     
     
+
+#define ADD_ITEM_EE(name) \
+CHK_OFAIL(register_label_table_item(newlist, #name, &MXF_EE_K(name)));
+
+
+int load_label_table_essence_element_keys(MXFList** label_list)
+{
+    MXFList* newlist;
     
+    mxf_create_list(&newlist, free_label_table_item_in_list);
+    
+    ADD_ITEM_EE(SDTI_CP_System_Pack);
+    
+    ADD_ITEM_EE(AvidMJPEGClipWrapped);
+    ADD_ITEM_EE(AvidMPEGClipWrapped);
+    ADD_ITEM_EE(DNxHD);
+    ADD_ITEM_EE(DVClipWrapped);
+    ADD_ITEM_EE(BWFClipWrapped);
+    ADD_ITEM_EE(AES3ClipWrapped);
+    ADD_ITEM_EE(UncClipWrapped);
+    ADD_ITEM_EE(IMX);
+    ADD_ITEM_EE(AvidUnc10BitClipWrapped);
+    //ADD_ITEM_EE(AvidUncRGBA);
+    
+    *label_list = newlist;
+    return 1;
+    
+fail:
+    
+    mxf_clear_list(&newlist);
+    return 0;
+    
+}
     
 
 int register_label_table_item(MXFList* label_list, char* name, mxfKey* label)
