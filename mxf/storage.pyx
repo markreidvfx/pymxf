@@ -83,14 +83,14 @@ cdef class Partition(object):
     
     property format:
         def __get__(self):
-            if lib.is_op_atom(&self.ptr.operationalPattern):
-                return 'atom'
-            elif lib.is_op_1a(&self.ptr.operationalPattern):
-                return '1a'
-            elif lib.is_op_1b(&self.ptr.operationalPattern):
-                return '1b'
-            else:
-                return "Unknown"
+            #if lib.is_op_atom(&self.ptr.operationalPattern):
+            return 'atom'
+            #elif lib.is_op_1a(&self.ptr.operationalPattern):
+            #    return '1a'
+            #elif lib.is_op_1b(&self.ptr.operationalPattern):
+            #    return '1b'
+            #else:
+            #    return "Unknown"
         
     property key:
         def __get__(self):
@@ -254,11 +254,11 @@ cdef class File(object):
         error_check(lib.mxf_read_header_pp_kl(self.ptr, &key, &llen, &length))
         return mxfUL_to_UUID(key), llen, length
     
-    def read_partition(self, key):
+    def read_partition(self, key, lib.uint64_t length):
         cdef lib.mxfKey ul
         UUID_to_mxfUL(key, &ul)
         cdef Partition part = Partition()
-        error_check(lib.mxf_read_partition(self.ptr, &ul, &part.ptr))
+        error_check(lib.mxf_read_partition(self.ptr, &ul, length, &part.ptr))
         return part
         
     def read_header_partition(self):
@@ -268,7 +268,7 @@ cdef class File(object):
         if not lib.mxf_read_header_pp_kl(self.ptr, &key, &llen, &length):
             raise IOError("Unable to read header")
         
-        part = self.read_partition(mxfUL_to_UUID(key))
+        part = self.read_partition(mxfUL_to_UUID(key),length )
         return part
     
     def read_header(self, Partition header_partition=None):
@@ -320,7 +320,7 @@ cdef class File(object):
                     self.seek(self.runin_len + rip_entry.thisPartition, "SEEK_SET")
                     
                     key, llen, length = self.read_kl()
-                    part = self.read_partition(key)
+                    part = self.read_partition(key, length)
                     partition_list.append(part)
             finally:
                 lib.mxf_clear_rip(&rip)
@@ -334,7 +334,7 @@ cdef class File(object):
             while True:
                 self.seek(self.runin_len + pos, "SEEK_SET")
                 key, llen, length = self.read_kl()
-                part = self.read_partition(key)
+                part = self.read_partition(key, length)
                 partition_list.append(part)
                 
                 print part.footer_position, part.position   
@@ -357,7 +357,7 @@ cdef class File(object):
             if partition.type_name == 'Body':
                 self.seek(partition.position)
                 key, llen, length = self.read_next_nonfiller_kl()              
-                self.read_partition(key)
+                self.read_partition(key, length)
                 key, llen, length = self.read_next_nonfiller_kl()
                 element = EssenceElement()
                 UUID_to_mxfUL(key, &mxf_key)

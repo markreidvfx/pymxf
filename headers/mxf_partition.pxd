@@ -66,7 +66,7 @@ cdef extern from "mxf/mxf.h":
 
     cdef int mxf_write_partition(MXFFile* mxfFile, MXFPartition* partition)
     cdef int mxf_update_partitions(MXFFile* mxfFile, MXFFilePartitions* partitions)
-    cdef int mxf_read_partition(MXFFile* mxfFile, const mxfKey* key, MXFPartition** partition)
+    cdef int mxf_read_partition(MXFFile* mxfFile, const mxfKey* key,uint64_t length, MXFPartition** partition)
 
     cdef int mxf_is_filler(const mxfKey* key)
     cdef int mxf_fill_to_kag(MXFFile* mxfFile, MXFPartition* partition)

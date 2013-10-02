@@ -2,11 +2,12 @@ from distutils.core import setup, Extension
 import os
 import subprocess
 
-
+os.environ['ARCHFLAGS'] ="-arch x86_64"
 ext_extra = {
-    'include_dirs': ['headers',os.path.join('lib','include')],
-    'library_dirs': ['lib'],
-    'libraries': ['MXF']
+    'include_dirs': ['headers',os.path.join('libmxf')],
+    #'library_dirs': [os.path.join('libmxf','mxf')],
+    'library_dirs': [os.path.join('libmxf','test_install', 'lib')],
+    'libraries': ['MXF-1.0']
 }
 
 ext_util_source = [os.path.join('headers', 'label_table.c')]

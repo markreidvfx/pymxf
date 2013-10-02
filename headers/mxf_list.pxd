@@ -18,7 +18,7 @@ cdef extern from "mxf/mxf.h":
         void* data
         long index
         
-    cdef int mxf_create_list(MXFList** list, free_func_type freeFunc)
+    cdef int mxf_create_list(MXFList** list, void* freeFunc)
     cdef void mxf_free_list(MXFList** list)
     cdef void mxf_initialise_list(MXFList* list, void *)
     cdef void mxf_clear_list(MXFList* list)

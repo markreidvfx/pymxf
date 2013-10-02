@@ -1,6 +1,7 @@
 include "mxf_types.pxd"
 include "mxf_file.pxd"
 include "mxf_list.pxd"
+include "mxf_tree.pxd"
 include "mxf_partition.pxd"
 include "mxf_data_model.pxd"
 include "mxf_essence_container.pxd"

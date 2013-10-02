@@ -129,7 +129,7 @@ OPERATION_PATTERNS = {
         'MultiTrack_Stream_Internal': mxfUL_to_UUID(lib.op_1a_MultiTrack_Stream_Internal),
         'MultiTrack_Stream_External': mxfUL_to_UUID(lib.op_1a_MultiTrack_Stream_External)
         },
-'1b':  {'MultiTrack_Stream_External': mxfUL_to_UUID(lib.op_1b_MultiTrack_Stream_External)}                      
+#'1b':  {'MultiTrack_Stream_External': mxfUL_to_UUID(lib.op_1b_MultiTrack_Stream_External)}                      
 }
 def find_op_pattern(bytes name, bytes pattern=None):
     
