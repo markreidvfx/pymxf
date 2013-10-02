@@ -1,0 +1,3 @@
+[submodule "libmxf"]
+	path = libmxf
+	url = git://git.code.sf.net/p/bmxlib/libmxf
