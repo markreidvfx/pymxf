@@ -13,7 +13,7 @@ extern "C"
 typedef struct
 {
     char* name;
-    mxfKey *key;
+    const mxfKey *key;
 }LabelTableItem;
     
 int load_label_table_essence_containers(MXFList** label_list);

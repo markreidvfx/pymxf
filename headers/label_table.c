@@ -44,6 +44,29 @@ static int add_label_table_item(MXFList* label_list, LabelTableItem* labelItem)
     
 }
 
+int register_label_table_item(MXFList* label_list, char* name, const mxfKey* label)
+{
+    
+    LabelTableItem* newItem = NULL;
+    CHK_MALLOC_ORET(newItem,  LabelTableItem);
+    memset(newItem, 0, sizeof(LabelTableItem));
+    
+    if (name!=NULL)
+    {
+        CHK_MALLOC_ARRAY_OFAIL(newItem->name, char, strlen(name) + 1);
+        strcpy(newItem->name, name);
+        
+    }
+    newItem->key = label;
+    CHK_OFAIL(add_label_table_item(label_list, newItem));
+    
+    return 1;
+fail:
+    free_label_table_item(&newItem);
+    return 0;
+}
+
+
 
 #define ADD_ITEM_EC(name) \
 CHK_OFAIL(register_label_table_item(newlist, #name, &MXF_EC_L(name)));
@@ -358,28 +381,4 @@ fail:
     return 0;
     
 }
-    
-
-int register_label_table_item(MXFList* label_list, char* name, mxfKey* label)
-{
-    
-    LabelTableItem* newItem = NULL;
-    CHK_MALLOC_ORET(newItem,  LabelTableItem);
-    memset(newItem, 0, sizeof(LabelTableItem));
-    
-    if (name!=NULL)
-    {
-        CHK_MALLOC_ARRAY_OFAIL(newItem->name, char, strlen(name) + 1);
-        strcpy(newItem->name, name);
-        
-    }
-    newItem->key = label;
-    CHK_OFAIL(add_label_table_item(label_list, newItem));
-    
-    return 1;
-fail:
-    free_label_table_item(&newItem);
-    return 0;
-}
-
 
