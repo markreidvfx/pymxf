@@ -17,7 +17,7 @@ build/cython/%.c: %.pyx
 	@ mkdir -p $(shell dirname $@)
 	cython -I. -Iheaders -o $@ $<
 
-build: libmxf cythonize
+build: cythonize
 	python setup.py build_ext --inplace --debug
 
 test: build
@@ -30,9 +30,6 @@ debug: build
 
 docs: build
 	make -C docs html
-
-libmxf:
-	make -C lib
 	
 clean:
 	- rm -rf build
@@ -40,5 +37,4 @@ clean:
 
 clean-all: clean
 	- rm configure config.py
-	- make -C lib clean
 
