@@ -1,7 +1,6 @@
 from libc.stdlib cimport malloc, free
 from libc.stdio cimport sscanf
 from libc.string cimport memset
-from aepack import unpack
 cimport lib
 from .util cimport error_check, uft16_to_bytes, mxfUUID_to_UUID, mxfUL_to_UUID, UUID_to_mxfUL, UUID_to_mxfUUID, MXFUL, MXFKEY,MXFUMID
 from .metadata cimport MetaDataSet, MetaDataItem  
