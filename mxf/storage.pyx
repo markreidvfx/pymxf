@@ -346,7 +346,7 @@ cdef class File(object):
                 
         return partition_list
     
-    def iter_esssence_data(self):
+    def iter_essence_data(self):
         
         cdef EssenceElement element
         cdef lib.mxfKey mxf_key
