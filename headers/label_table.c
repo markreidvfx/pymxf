@@ -1,7 +1,8 @@
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 #include <label_table.h>
-
+#include <mxf/mxf_macros.h>
 
 
 
@@ -17,8 +18,8 @@ static void free_label_table_item(LabelTableItem** labelItem)
     {
         return;
     }
-    SAFE_FREE(&(*labelItem)->name);
-    SAFE_FREE(labelItem);
+    SAFE_FREE((*labelItem)->name);
+    SAFE_FREE(*labelItem);
 }
 
 static void free_label_table_item_in_list(void *data)
@@ -42,6 +43,29 @@ static int add_label_table_item(MXFList* label_list, LabelTableItem* labelItem)
     return 1;
     
 }
+
+int register_label_table_item(MXFList* label_list, char* name, const mxfKey* label)
+{
+    
+    LabelTableItem* newItem = NULL;
+    CHK_MALLOC_ORET(newItem,  LabelTableItem);
+    memset(newItem, 0, sizeof(LabelTableItem));
+    
+    if (name!=NULL)
+    {
+        CHK_MALLOC_ARRAY_OFAIL(newItem->name, char, strlen(name) + 1);
+        strcpy(newItem->name, name);
+        
+    }
+    newItem->key = label;
+    CHK_OFAIL(add_label_table_item(label_list, newItem));
+    
+    return 1;
+fail:
+    free_label_table_item(&newItem);
+    return 0;
+}
+
 
 
 #define ADD_ITEM_EC(name) \
@@ -174,28 +198,28 @@ int load_label_table_essence_containers(MXFList** label_list)
     ADD_ITEM_EC(AvidIMX40_525_60);
     ADD_ITEM_EC(AvidIMX30_625_50);
     ADD_ITEM_EC(AvidIMX30_525_60);
-    ADD_ITEM_EC(AvidMPEG4);
+    //ADD_ITEM_EC(AvidMPEG4);
     ADD_ITEM_EC(AvidMPEGClipWrapped);
-    ADD_ITEM_EC(DNxHD720p120ClipWrapped);
-    ADD_ITEM_EC(DNxHD720p185ClipWrapped);
-    ADD_ITEM_EC(DNxHD1080p185XClipWrapped);
-    ADD_ITEM_EC(DNxHD1080p120ClipWrapped);
-    ADD_ITEM_EC(DNxHD1080p185ClipWrapped);
-    ADD_ITEM_EC(DNxHD1080p36ClipWrapped);
-    ADD_ITEM_EC(DNxHD1080i185XClipWrapped);
-    ADD_ITEM_EC(DNxHD1080i120ClipWrapped);
-    ADD_ITEM_EC(DNxHD1080i185ClipWrapped);
+    //ADD_ITEM_EC(DNxHD720p120ClipWrapped);
+    //ADD_ITEM_EC(DNxHD720p185ClipWrapped);
+    //ADD_ITEM_EC(DNxHD1080p185XClipWrapped);
+    //ADD_ITEM_EC(DNxHD1080p120ClipWrapped);
+    //ADD_ITEM_EC(DNxHD1080p185ClipWrapped);
+    //ADD_ITEM_EC(DNxHD1080p36ClipWrapped);
+    //ADD_ITEM_EC(DNxHD1080i185XClipWrapped);
+    //ADD_ITEM_EC(DNxHD1080i120ClipWrapped);
+    //ADD_ITEM_EC(DNxHD1080i185ClipWrapped);
     
     /* P2 AVC Intra-Frame Coding - version byte is incorrectly set to 0x01 */
-    ADD_ITEM_EC(P2AVCIFrameWrapped);
-    ADD_ITEM_EC(P2AVCIClipWrapped);
+    //ADD_ITEM_EC(P2AVCIFrameWrapped);
+    //ADD_ITEM_EC(P2AVCIClipWrapped);
     
     *label_list = newlist;
     return 1;
     
 fail:
     
-    mxf_clear_list(&newlist);
+    mxf_clear_list(newlist);
     return 0;
     
 }
@@ -278,7 +302,7 @@ int load_label_table_essence_coding_labels(MXFList** label_list)
     
     // Avid Labels
     
-    ADD_ITEM_CMDEF(AvidMJPEG1110B_NTSC);
+    //ADD_ITEM_CMDEF(AvidMJPEG1110B_NTSC);
     ADD_ITEM_CMDEF(AvidMJPEG21_PAL);
     ADD_ITEM_CMDEF(AvidMJPEG21_NTSC);
     ADD_ITEM_CMDEF(AvidMJPEG31_PAL);
@@ -318,7 +342,7 @@ int load_label_table_essence_coding_labels(MXFList** label_list)
     
 fail:
     
-    mxf_clear_list(&newlist);
+    mxf_clear_list(newlist);
     return 0;
     
 }
@@ -353,32 +377,8 @@ int load_label_table_essence_element_keys(MXFList** label_list)
     
 fail:
     
-    mxf_clear_list(&newlist);
+    mxf_clear_list(newlist);
     return 0;
     
 }
-    
-
-int register_label_table_item(MXFList* label_list, char* name, mxfKey* label)
-{
-    
-    LabelTableItem* newItem = NULL;
-    CHK_MALLOC_ORET(newItem, LabelTableItem);
-    memset(newItem, 0, sizeof(LabelTableItem));
-    
-    if (name!=NULL)
-    {
-        CHK_MALLOC_ARRAY_OFAIL(newItem->name, char, strlen(name) + 1);
-        strcpy(newItem->name, name);
-        
-    }
-    newItem->key = label;
-    CHK_OFAIL(add_label_table_item(label_list, newItem));
-    
-    return 1;
-fail:
-    free_label_table_item(&newItem);
-    return 0;
-}
-
 

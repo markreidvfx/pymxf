@@ -75,7 +75,7 @@ cdef extern from "mxf/mxf.h":
     cdef int mxf_get_weakref(MXFHeaderMetadata* headerMetadata, uint8_t* value, MXFMetadataSet** set)
     cdef int mxf_dereference(MXFHeaderMetadata* headerMetadata, mxfUUID* uuid, MXFMetadataSet** set)
 
-    cdef void initialise_sets_iter(MXFHeaderMetadata* headerMetadata, MXFListIterator* setsIter)
+    cdef void mxf_initialise_sets_iter(MXFHeaderMetadata *headerMetadata, MXFListIterator *setsIter)
     cdef int mxf_get_strongref_s(MXFHeaderMetadata* headerMetadata, MXFListIterator* setsIter, uint8_t* value, MXFMetadataSet** set)
     cdef int mxf_get_weakref_s(MXFHeaderMetadata* headerMetadata, MXFListIterator* setsIter, uint8_t* value, MXFMetadataSet** set)
     cdef int mxf_dereference_s(MXFHeaderMetadata* headerMetadata, MXFListIterator* setsIter, mxfUUID* uuid, MXFMetadataSet** set)

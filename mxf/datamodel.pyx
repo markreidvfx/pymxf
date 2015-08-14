@@ -1,7 +1,6 @@
 from libc.stdlib cimport malloc, free
 from libc.stdio cimport sscanf
 from libc.string cimport memset
-from aepack import unpack
 cimport lib
 from .util cimport error_check, uft16_to_bytes, mxfUUID_to_UUID, mxfUL_to_UUID, UUID_to_mxfUL, UUID_to_mxfUUID, MXFUL, MXFKEY,MXFUMID
 from .metadata cimport MetaDataSet, MetaDataItem  
@@ -622,6 +621,9 @@ cdef class SetDef(object):
     property name:
         def __get__(self):
             return self.ptr.name
+    property key:
+        def __get__(self):
+            return mxfUL_to_UUID(self.ptr.key)
 
 
 cdef class DataModel(object):
@@ -643,14 +645,20 @@ cdef class DataModel(object):
             
     def iter_setdefs(self):
         cdef SetDef setdef
-        cdef lib.MXFListIterator set_iter
-        lib.mxf_initialise_list_iter(&set_iter, &self.ptr.setDefs)
-        while lib.mxf_next_list_iter_element(&set_iter):
-            setdef = SetDef()
-            setdef.ptr = <lib.MXFSetDef *> lib.mxf_get_iter_element(&set_iter)
+        
+        set_def_list = setdef_tree_to_list(&self.ptr.setDefs)
+        for setdef in set_def_list:
             setdef.model = self
             yield setdef
-    
+#         
+#         cdef lib.MXFListIterator set_iter
+#         lib.mxf_initialise_list_iter(&set_iter, &self.ptr.setDefs)
+#         while lib.mxf_next_list_iter_element(&set_iter):
+#             setdef = SetDef()
+#             setdef.ptr = <lib.MXFSetDef *> lib.mxf_get_iter_element(&set_iter)
+#             setdef.model = self
+#             yield setdef
+#     
     def iter_itemdefs(self):
         cdef ItemDef itemdef
         cdef lib.MXFListIterator item_iter
@@ -678,6 +686,19 @@ cdef class DataModel(object):
         itemtype.ptr = lib.mxf_get_item_def_type(self.ptr, itemdef.ptr.typeId)
         itemtype.model = self
         return resolve_itemtype(itemtype)
+    
+cdef int setdef_tree_append_list(void * node_data, void*process_data):
+    cdef lib.MXFSetDef* set_def = <lib.MXFSetDef*> node_data
+    cdef list python_list = <list> process_data
+    cdef SetDef set_def_obj = SetDef()
+    set_def_obj.ptr = set_def
+    python_list.append(set_def_obj)
+    return 1
+    
+cdef object setdef_tree_to_list(lib.MXFTree *tree):
+    cdef list python_list = list()
+    error_check(lib.mxf_tree_traverse(tree, <void *> setdef_tree_append_list, <void *> python_list))
+    return python_list
     
 cdef object resolve_itemtype(ItemType itemtype):
 

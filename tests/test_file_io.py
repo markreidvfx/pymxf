@@ -352,14 +352,14 @@ class TestFile(unittest.TestCase):
         f.seek(0)
         print f.read_header_partition()
         
-    def test_iter_esssence_data(self):
+    def test_iter_essence_data(self):
         test_file = os.path.join(files,'test_title.mxf')
         #test_file = os.path.join(files,'output.mxf')
         f = mxf.open(test_file, 'r')
         
         
         
-        for i, essence in enumerate(f.iter_esssence_data()):
+        for i, essence in enumerate(f.iter_essence_data()):
             output = os.path.join(sandbox, 'outfile%d' % i)
             out = open(output, 'w')
             

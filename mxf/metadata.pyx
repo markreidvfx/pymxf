@@ -214,7 +214,7 @@ cdef class HeaderMetadata(object):
         
         cdef lib.MXFListIterator setsIter
         
-        lib.initialise_sets_iter(self.ptr, &setsIter)
+        lib.mxf_initialise_sets_iter(self.ptr, &setsIter)
         
         while lib.mxf_next_list_iter_element(&setsIter):
             meta_set = MetaDataSet()

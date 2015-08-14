@@ -60,7 +60,7 @@ cdef extern from "mxf/mxf.h":
     
     ctypedef struct MXFDataModel:
         MXFList itemDefs
-        MXFList setDefs
+        MXFTree setDefs
         MXFItemType types[128]
         unsigned int lastTypeId
         
