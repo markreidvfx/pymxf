@@ -1,4 +1,5 @@
 from distutils.core import setup, Extension
+from Cython.Build import cythonize
 import os
 import subprocess
 
@@ -33,22 +34,17 @@ libmxf_info = pkgconfig('libMXF-1.0')
 
 ext_extra['include_dirs'].extend(libmxf_info['include_dirs'])
 ext_extra['library_dirs'].extend(libmxf_info['library_dirs'])
-    
-
-
-
 ext_util_source = [os.path.join('headers', 'label_table.c')]
 
-# Construct the modules that we find in the "build/cython" directory.
 ext_modules = []
-build_dir = os.path.abspath(os.path.join(__file__, '..', 'build', 'cython'))
-for dirname, dirnames, filenames in os.walk(build_dir):
+
+for dirname, dirnames, filenames in os.walk("mxf"):
     for filename in filenames:
-        if filename.startswith('.') or os.path.splitext(filename)[1] != '.c':
+        if filename.startswith('.') or os.path.splitext(filename)[1] != '.pyx':
             continue
 
         path = os.path.join(dirname, filename)
-        name = os.path.splitext(os.path.relpath(path, build_dir))[0].replace('/', '.')
+        name = os.path.join("mxf", os.path.splitext(filename)[0])
         sources=[path]
         sources.extend(ext_util_source)
         
@@ -70,7 +66,8 @@ setup(
     
     url="",
     license="GPLv2",
-    
-    ext_modules=ext_modules,
+
+    packages=['mxf'],
+    ext_modules=cythonize(ext_modules, include_path=["headers"]),
 
 )
